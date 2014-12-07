@@ -4,7 +4,6 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
-	"strconv"
 	"sync"
 )
 
@@ -12,17 +11,7 @@ type CacheKVStore struct {
 	Cache *CacheKVStoreConnection
 }
 
-func (k *CacheKVStore) NewFromParams(params map[string]string) KVStore {
-	value, ok := params["max_entries"]
-
-	var maxEntries int
-
-	if !ok {
-		maxEntries = -1
-	} else {
-		maxEntries, _ = strconv.Atoi(value)
-	}
-
+func NewCacheKVStore(maxEntries int) KVStore {
 	return &CacheKVStore{Cache: NewCacheKVStoreConnection(maxEntries)}
 }
 

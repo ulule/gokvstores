@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func newPool(host string, port string, password string, db string) *redis.Pool {
+func newPool(host string, port int, password string, db int) *redis.Pool {
 	return &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -37,12 +37,12 @@ func newPool(host string, port string, password string, db string) *redis.Pool {
 	}
 }
 
-type RedisKVStore struct {
-	Pool *redis.Pool
+func NewRedisStore(host string, port int, password string, db int) KVStore {
+	return &RedisKVStore{Pool: newPool(host, port, password, db)}
 }
 
-func (k *RedisKVStore) NewFromParams(params map[string]string) KVStore {
-	return &RedisKVStore{Pool: newPool(params["host"], params["port"], params["password"], params["db"])}
+type RedisKVStore struct {
+	Pool *redis.Pool
 }
 
 func (k *RedisKVStore) Close() error {

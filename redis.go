@@ -11,7 +11,7 @@ func newPool(host string, port int, password string, db int) *redis.Pool {
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
+			c, err := redis.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 
 			if err != nil {
 				return nil, err
@@ -37,7 +37,7 @@ func newPool(host string, port int, password string, db int) *redis.Pool {
 	}
 }
 
-func NewRedisStore(host string, port int, password string, db int) KVStore {
+func NewRedisKVStore(host string, port int, password string, db int) KVStore {
 	return &RedisKVStore{Pool: newPool(host, port, password, db)}
 }
 

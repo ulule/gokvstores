@@ -2,7 +2,6 @@ package kvstores
 
 import (
 	"container/list"
-	"errors"
 	"fmt"
 	"sync"
 )
@@ -56,7 +55,7 @@ func (c *CacheKVStoreConnection) Delete(key string) error {
 	defer c.mu.Unlock()
 
 	if _, ok := c.cache[key]; !ok {
-		return errors.New(fmt.Sprintf("Key %s does not exist", key))
+		return fmt.Errorf("Key %s does not exist", key)
 	}
 
 	delete(c.cache, key)

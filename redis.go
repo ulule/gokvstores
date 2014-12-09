@@ -65,20 +65,14 @@ func (k *RedisKVStoreConnection) Flush() error {
 	return k.Connection.Flush()
 }
 
-func (k *RedisKVStoreConnection) Get(key string) string {
+func (k *RedisKVStoreConnection) Get(key string) interface{} {
 	reply, err := k.Connection.Do("GET", key)
 
 	if err != nil {
-		return ""
+		return nil
 	}
 
-	result, err := redis.String(reply, err)
-
-	if err != nil {
-		return ""
-	}
-
-	return result
+	return reply
 }
 
 func (k *RedisKVStoreConnection) Exists(key string) bool {
@@ -91,7 +85,7 @@ func (k *RedisKVStoreConnection) Exists(key string) bool {
 	return exists
 }
 
-func (k *RedisKVStoreConnection) Set(key string, value string) error {
+func (k *RedisKVStoreConnection) Set(key string, value interface{}) error {
 	_, err := k.Connection.Do("SET", key, value)
 
 	if err != nil {

@@ -26,7 +26,7 @@ type CacheKVStoreConnection struct {
 // *entry is the type stored in each *list.Element.
 type entry struct {
 	key   string
-	value string
+	value interface{}
 }
 
 // New returns a new cache with the provided maximum items.
@@ -81,7 +81,7 @@ func (c *CacheKVStoreConnection) Exists(key string) bool {
 
 // Add adds the provided key and value to the cache, evicting
 // an old item if necessary.
-func (c *CacheKVStoreConnection) Set(key string, value string) error {
+func (c *CacheKVStoreConnection) Set(key string, value interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -105,7 +105,7 @@ func (c *CacheKVStoreConnection) Set(key string, value string) error {
 
 // Get fetches the key's value from the cache.
 // The ok result will be true if the item was found.
-func (c *CacheKVStoreConnection) Get(key string) string {
+func (c *CacheKVStoreConnection) Get(key string) interface{} {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -114,19 +114,19 @@ func (c *CacheKVStoreConnection) Get(key string) string {
 		return ele.Value.(*entry).value
 	}
 
-	return ""
+	return nil
 }
 
 // RemoveOldest removes the oldest item in the cache and returns its key and value.
 // If the cache is empty, the empty string and nil are returned.
-func (c *CacheKVStoreConnection) RemoveOldest() (key string, value string) {
+func (c *CacheKVStoreConnection) RemoveOldest() (key string, value interface{}) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.removeOldest()
 }
 
 // note: must hold c.mu
-func (c *CacheKVStoreConnection) removeOldest() (key string, value string) {
+func (c *CacheKVStoreConnection) removeOldest() (key string, value interface{}) {
 	ele := c.ll.Back()
 	if ele == nil {
 		return

@@ -15,13 +15,15 @@ func TestRedis(t *testing.T) {
 
 	con.Set("key", "value")
 
-	assert.Equal(t, "value", con.Get("key"))
+	value, _ := String(con.Get("key"))
+
+	assert.Equal(t, "value", value)
 
 	assert.True(t, con.Exists("key"))
 
 	con.Delete("key")
 
-	assert.Equal(t, "", con.Get("key"))
+	assert.Equal(t, nil, con.Get("key"))
 
 	assert.False(t, con.Exists("key"))
 }

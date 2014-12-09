@@ -61,6 +61,10 @@ func (k *RedisKVStoreConnection) Close() error {
 	return k.Connection.Close()
 }
 
+func (k *RedisKVStoreConnection) Flush() error {
+	return k.Connection.Flush()
+}
+
 func (k *RedisKVStoreConnection) Get(key string) string {
 	reply, err := k.Connection.Do("GET", key)
 
@@ -98,7 +102,7 @@ func (k *RedisKVStoreConnection) Set(key string, value string) error {
 }
 
 func (k *RedisKVStoreConnection) Delete(key string) error {
-	_, err := k.Connection.Do("DELETE", key)
+	_, err := k.Connection.Do("DEL", key)
 
 	if err != nil {
 		return err

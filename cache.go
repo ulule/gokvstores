@@ -46,6 +46,13 @@ func (c *CacheKVStore) Close() error {
 	return nil
 }
 
+func (c *CacheKVStoreConnection) Flush() error {
+	c.ll = list.New()
+	c.cache = make(map[string]*list.Element)
+
+	return nil
+}
+
 func (c *CacheKVStoreConnection) Close() error {
 	return nil
 }
@@ -64,8 +71,12 @@ func (c *CacheKVStoreConnection) Delete(key string) error {
 }
 
 func (c *CacheKVStoreConnection) Exists(key string) bool {
-	return false
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
+	_, ok := c.cache[key]
+
+	return ok
 }
 
 // Add adds the provided key and value to the cache, evicting

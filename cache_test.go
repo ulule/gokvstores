@@ -1,4 +1,4 @@
-package kvstores
+package gokvstores
 
 import (
 	"github.com/stretchr/testify/assert"

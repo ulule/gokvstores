@@ -1,4 +1,4 @@
-package kvstores
+package gokvstores
 
 import (
 	"container/list"

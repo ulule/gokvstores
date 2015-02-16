@@ -1,4 +1,4 @@
-package kvstores
+package gokvstores
 
 type KVStore interface {
 	Connection() KVStoreConnection

@@ -12,4 +12,5 @@ type KVStoreConnection interface {
 	Flush() error
 	Exists(key string) bool
 	Set(key string, value interface{}) error
+	Append(key string, value interface{}) error
 }

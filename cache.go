@@ -3,6 +3,7 @@ package gokvstores
 import (
 	"container/list"
 	"fmt"
+	"reflect"
 	"sync"
 )
 
@@ -95,6 +96,44 @@ func (c *CacheKVStoreConnection) Set(key string, value interface{}) error {
 	// Add to cache if not present
 	ele := c.ll.PushFront(&entry{key, value})
 	c.cache[key] = ele
+
+	if c.ll.Len() > c.maxEntries && c.maxEntries != -1 {
+		c.removeOldest()
+	}
+
+	return nil
+}
+
+// Appends the value to the existing item which is stored under provided key
+// evicting an old item if necessary.
+func (c *CacheKVStoreConnection) Append(key string, value interface{}) error {
+	var v string
+	switch sv := value.(type) {
+	case string:
+		v = sv
+	case []byte:
+		v = string(sv)
+	default:
+		return fmt.Errorf("Value must be a string or []byte, got: %s", reflect.TypeOf(value))
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	ee, ok := c.cache[key]
+	if !ok {
+		return fmt.Errorf("Key %s does not exist", key)
+	}
+
+	switch ev := ee.Value.(*entry).value.(type) {
+	case string:
+		ee.Value.(*entry).value = ev + v
+	case []byte:
+		ee.Value.(*entry).value = append(ev, v...)
+	default:
+		return fmt.Errorf("Can only append to a string or []byte, got: %s", reflect.TypeOf(value))
+	}
+	c.ll.MoveToFront(ee)
 
 	if c.ll.Len() > c.maxEntries && c.maxEntries != -1 {
 		c.removeOldest()

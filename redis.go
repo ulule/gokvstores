@@ -95,6 +95,16 @@ func (k *RedisKVStoreConnection) Set(key string, value interface{}) error {
 	return nil
 }
 
+func (k *RedisKVStoreConnection) Append(key string, value interface{}) error {
+	_, err := k.Connection.Do("APPEND", key, value)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (k *RedisKVStoreConnection) SetAdd(key string, value interface{}) error {
 	_, err := k.Connection.Do("SADD", key, value)
 

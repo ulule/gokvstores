@@ -62,4 +62,15 @@ func TestRedis(t *testing.T) {
 	assert.True(t, compareStringSets(con.SetMembers("myset"), []string{"hello", "world", "hi"}))
 	con.Delete("myset")
 	assert.True(t, con.SetMembers("myset") == nil)
+
+	// Append
+	con.Set("greetings", "Hello, ")
+
+	con.Append("greetings", "World!")
+	value, _ = String(con.Get("greetings"))
+	assert.Equal(t, "Hello, World!", value)
+
+	con.Append("greetings", " 123")
+	value, _ = String(con.Get("greetings"))
+	assert.Equal(t, "Hello, World! 123", value)
 }

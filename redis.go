@@ -95,6 +95,34 @@ func (k *RedisKVStoreConnection) Set(key string, value interface{}) error {
 	return nil
 }
 
+func (k *RedisKVStoreConnection) SetAdd(key string, value interface{}) error {
+	_, err := k.Connection.Do("SADD", key, value)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (k *RedisKVStoreConnection) SetMembers(key string) []interface{} {
+	reply, err := k.Connection.Do("SMEMBERS", key)
+
+	if err != nil {
+		return nil
+	}
+
+	values, err := Values(reply)
+	if err != nil {
+		return nil
+	}
+	if len(values) == 0 {
+		return nil
+	}
+
+	return values
+}
+
 func (k *RedisKVStoreConnection) Delete(key string) error {
 	_, err := k.Connection.Do("DEL", key)
 

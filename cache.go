@@ -103,6 +103,65 @@ func (c *CacheKVStoreConnection) Set(key string, value interface{}) error {
 	return nil
 }
 
+// SetAdd adds a value to the set stored under the key, creates a new set if
+// one doesn't exist. Evicts an old item if necessary.
+func (c *CacheKVStoreConnection) SetAdd(key string, value interface{}) error {
+	svalue := fmt.Sprint(value)
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Already in cache?
+	if ee, ok := c.cache[key]; ok {
+		// Assume the value is a map[string]bool
+		m, ok := ee.Value.(*entry).value.(map[string]bool)
+		if !ok {
+			return fmt.Errorf("Key %s doesn't contain a set", key)
+		}
+		c.ll.MoveToFront(ee)
+		m[svalue] = true
+		return nil
+	}
+
+	// Add to cache if not present
+	m := make(map[string]bool)
+	m[svalue] = true
+	ele := c.ll.PushFront(&entry{key, m})
+	c.cache[key] = ele
+
+	if c.ll.Len() > c.maxEntries && c.maxEntries != -1 {
+		c.removeOldest()
+	}
+
+	return nil
+}
+
+// SetMembers returns the members of the set. It will return nil if there is
+// no such set, or if the item is not a set.
+func (c *CacheKVStoreConnection) SetMembers(key string) []interface{} {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if ele, hit := c.cache[key]; hit {
+		m, ok := ele.Value.(*entry).value.(map[string]bool)
+		if !ok {
+			return nil
+		}
+
+		i := 0
+		result := make([]interface{}, len(m))
+		for k, _ := range m {
+			result[i] = k
+			i++
+		}
+
+		c.ll.MoveToFront(ele)
+		return result
+	}
+
+	return nil
+}
+
 // Get fetches the key's value from the cache.
 // The ok result will be true if the item was found.
 func (c *CacheKVStoreConnection) Get(key string) interface{} {

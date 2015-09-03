@@ -12,4 +12,6 @@ type KVStoreConnection interface {
 	Flush() error
 	Exists(key string) bool
 	Set(key string, value interface{}) error
+	SetAdd(key string, value interface{}) error
+	SetMembers(key string) []interface{}
 }

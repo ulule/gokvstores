@@ -24,4 +24,15 @@ func TestCache(t *testing.T) {
 	assert.Equal(t, nil, con.Get("key"))
 
 	assert.False(t, con.Exists("key"))
+
+	// Sets
+	con.SetAdd("myset", "hello")
+	con.SetAdd("myset", "world")
+	assert.True(t, compareStringSets(con.SetMembers("myset"), []string{"hello", "world"}))
+	con.SetAdd("myset", "hello")
+	assert.True(t, compareStringSets(con.SetMembers("myset"), []string{"hello", "world"}))
+	con.SetAdd("myset", "hi")
+	assert.True(t, compareStringSets(con.SetMembers("myset"), []string{"hello", "world", "hi"}))
+	con.Delete("myset")
+	assert.True(t, con.SetMembers("myset") == nil)
 }

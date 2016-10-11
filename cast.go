@@ -8,10 +8,14 @@ import (
 
 type Error string
 
-func (err Error) Error() string { return string(err) }
+func (err Error) Error() string {
+	return string(err)
+}
 
-var ErrNil = errors.New("redigo: nil returned")
-var errNegativeInt = errors.New("redigo: unexpected value for Uint64")
+var (
+	ErrNil         = errors.New("gokvstores: nil returned")
+	errNegativeInt = errors.New("gokvstores: unexpected value for Uint64")
+)
 
 // Int is a helper that converts a command reply to an integer. If err is not
 // equal to nil, then Int returns 0, err. Otherwise, Int converts the
@@ -22,6 +26,7 @@ var errNegativeInt = errors.New("redigo: unexpected value for Uint64")
 //  bulk string   parsed reply, nil
 //  nil           0, ErrNil
 //  other         0, error
+//
 func Int(reply interface{}) (int, error) {
 	switch reply := reply.(type) {
 	case int64:
@@ -38,7 +43,8 @@ func Int(reply interface{}) (int, error) {
 	case Error:
 		return 0, reply
 	}
-	return 0, fmt.Errorf("kvstores: unexpected type for Int, got type %T", reply)
+
+	return 0, fmt.Errorf("gokvstores: unexpected type for Int, got type %T", reply)
 }
 
 // Int64 is a helper that converts a command reply to 64 bit integer. If err is
@@ -50,6 +56,7 @@ func Int(reply interface{}) (int, error) {
 //  bulk string   parsed reply, nil
 //  nil           0, ErrNil
 //  other         0, error
+//
 func Int64(reply interface{}) (int64, error) {
 	switch reply := reply.(type) {
 	case int64:
@@ -62,7 +69,8 @@ func Int64(reply interface{}) (int64, error) {
 	case Error:
 		return 0, reply
 	}
-	return 0, fmt.Errorf("kvstores: unexpected type for Int64, got type %T", reply)
+
+	return 0, fmt.Errorf("gokvstores: unexpected type for Int64, got type %T", reply)
 }
 
 // Uint64 is a helper that converts a command reply to 64 bit integer. If err is
@@ -74,6 +82,7 @@ func Int64(reply interface{}) (int64, error) {
 //  bulk string   parsed reply, nil
 //  nil           0, ErrNil
 //  other         0, error
+//
 func Uint64(reply interface{}) (uint64, error) {
 	switch reply := reply.(type) {
 	case int64:
@@ -89,7 +98,8 @@ func Uint64(reply interface{}) (uint64, error) {
 	case Error:
 		return 0, reply
 	}
-	return 0, fmt.Errorf("kvstores: unexpected type for Uint64, got type %T", reply)
+
+	return 0, fmt.Errorf("gokvstores: unexpected type for Uint64, got type %T", reply)
 }
 
 // Float64 is a helper that converts a command reply to 64 bit float. If err is
@@ -100,6 +110,7 @@ func Uint64(reply interface{}) (uint64, error) {
 //  bulk string   parsed reply, nil
 //  nil           0, ErrNil
 //  other         0, error
+//
 func Float64(reply interface{}) (float64, error) {
 	switch reply := reply.(type) {
 	case []byte:
@@ -110,7 +121,8 @@ func Float64(reply interface{}) (float64, error) {
 	case Error:
 		return 0, reply
 	}
-	return 0, fmt.Errorf("kvstores: unexpected type for Float64, got type %T", reply)
+
+	return 0, fmt.Errorf("gokvstores: unexpected type for Float64, got type %T", reply)
 }
 
 // String is a helper that converts a command reply to a string. If err is not
@@ -122,6 +134,7 @@ func Float64(reply interface{}) (float64, error) {
 //  simple string   reply, nil
 //  nil             "",  ErrNil
 //  other           "",  error
+//
 func String(reply interface{}) (string, error) {
 	switch reply := reply.(type) {
 	case []byte:
@@ -133,7 +146,8 @@ func String(reply interface{}) (string, error) {
 	case Error:
 		return "", reply
 	}
-	return "", fmt.Errorf("kvstores: unexpected type for String, got type %T", reply)
+
+	return "", fmt.Errorf("gokvstores: unexpected type for String, got type %T", reply)
 }
 
 // Bytes is a helper that converts a command reply to a slice of bytes. If err
@@ -145,6 +159,7 @@ func String(reply interface{}) (string, error) {
 //  simple string   []byte(reply), nil
 //  nil             nil, ErrNil
 //  other           nil, error
+//
 func Bytes(reply interface{}) ([]byte, error) {
 	switch reply := reply.(type) {
 	case []byte:
@@ -156,7 +171,8 @@ func Bytes(reply interface{}) ([]byte, error) {
 	case Error:
 		return nil, reply
 	}
-	return nil, fmt.Errorf("kvstores: unexpected type for Bytes, got type %T", reply)
+
+	return nil, fmt.Errorf("gokvstores: unexpected type for Bytes, got type %T", reply)
 }
 
 // Bool is a helper that converts a command reply to a boolean. If err is not
@@ -179,11 +195,14 @@ func Bool(reply interface{}) (bool, error) {
 	case Error:
 		return false, reply
 	}
-	return false, fmt.Errorf("kvstores: unexpected type for Bool, got type %T", reply)
+
+	return false, fmt.Errorf("gokvstores: unexpected type for Bool, got type %T", reply)
 }
 
 // MultiBulk is deprecated. Use Values.
-func MultiBulk(reply interface{}) ([]interface{}, error) { return Values(reply) }
+func MultiBulk(reply interface{}) ([]interface{}, error) {
+	return Values(reply)
+}
 
 // Values is a helper that converts an array command reply to a []interface{}.
 // If err is not equal to nil, then Values returns nil, err. Otherwise, Values
@@ -193,6 +212,7 @@ func MultiBulk(reply interface{}) ([]interface{}, error) { return Values(reply) 
 //  array           reply, nil
 //  nil             nil, ErrNil
 //  other           nil, error
+//
 func Values(reply interface{}) ([]interface{}, error) {
 	switch reply := reply.(type) {
 	case []interface{}:
@@ -202,7 +222,8 @@ func Values(reply interface{}) ([]interface{}, error) {
 	case Error:
 		return nil, reply
 	}
-	return nil, fmt.Errorf("kvstores: unexpected type for Values, got type %T", reply)
+
+	return nil, fmt.Errorf("gokvstores: unexpected type for Values, got type %T", reply)
 }
 
 // Strings is a helper that converts an array command reply to a []string. If
@@ -218,7 +239,7 @@ func Strings(reply interface{}) ([]string, error) {
 			}
 			p, ok := reply[i].([]byte)
 			if !ok {
-				return nil, fmt.Errorf("kvstores: unexpected element type for Strings, got type %T", reply[i])
+				return nil, fmt.Errorf("gokvstores: unexpected element type for Strings, got type %T", reply[i])
 			}
 			result[i] = string(p)
 		}
@@ -228,5 +249,6 @@ func Strings(reply interface{}) ([]string, error) {
 	case Error:
 		return nil, reply
 	}
-	return nil, fmt.Errorf("kvstores: unexpected type for Strings, got type %T", reply)
+
+	return nil, fmt.Errorf("gokvstores: unexpected type for Strings, got type %T", reply)
 }

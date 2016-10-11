@@ -5,60 +5,45 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 )
 
+// CacheKVStore is the in-memory implementation of KVStore.
 type CacheKVStore struct {
-	Cache *CacheKVStoreConnection
-}
-
-func NewCacheKVStore(maxEntries int) KVStore {
-	return &CacheKVStore{Cache: NewCacheKVStoreConnection(maxEntries)}
-}
-
-// Cache is an LRU cache, safe for concurrent access.
-type CacheKVStoreConnection struct {
+	mu         sync.Mutex
+	expiration time.Duration
 	maxEntries int
-
-	mu    sync.Mutex
-	ll    *list.List
-	cache map[string]*list.Element
+	ll         *list.List
+	cache      map[string]*list.Element
 }
 
-// *entry is the type stored in each *list.Element.
+// entry is the type stored in each *list.Element.
 type entry struct {
 	key   string
 	value interface{}
 }
 
-// New returns a new cache with the provided maximum items.
-func NewCacheKVStoreConnection(maxEntries int) *CacheKVStoreConnection {
-	return &CacheKVStoreConnection{
+// NewCacheKVStore returns in-memory KVStore.
+func NewCacheKVStore(maxEntries int, expiration int) KVStore {
+	return &CacheKVStore{
 		maxEntries: maxEntries,
 		ll:         list.New(),
 		cache:      make(map[string]*list.Element),
+		expiration: time.Duration(expiration) * time.Second,
 	}
-}
-
-func (c *CacheKVStore) Connection() KVStoreConnection {
-	return c.Cache
 }
 
 func (c *CacheKVStore) Close() error {
 	return nil
 }
 
-func (c *CacheKVStoreConnection) Flush() error {
+func (c *CacheKVStore) Flush() error {
 	c.ll = list.New()
 	c.cache = make(map[string]*list.Element)
-
 	return nil
 }
 
-func (c *CacheKVStoreConnection) Close() error {
-	return nil
-}
-
-func (c *CacheKVStoreConnection) Delete(key string) error {
+func (c *CacheKVStore) Delete(key string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -71,7 +56,7 @@ func (c *CacheKVStoreConnection) Delete(key string) error {
 	return nil
 }
 
-func (c *CacheKVStoreConnection) Exists(key string) bool {
+func (c *CacheKVStore) Exists(key string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -80,9 +65,7 @@ func (c *CacheKVStoreConnection) Exists(key string) bool {
 	return ok
 }
 
-// Add adds the provided key and value to the cache, evicting
-// an old item if necessary.
-func (c *CacheKVStoreConnection) Set(key string, value interface{}) error {
+func (c *CacheKVStore) Set(key string, value interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -104,9 +87,7 @@ func (c *CacheKVStoreConnection) Set(key string, value interface{}) error {
 	return nil
 }
 
-// Appends the value to the existing item which is stored under provided key
-// evicting an old item if necessary.
-func (c *CacheKVStoreConnection) Append(key string, value interface{}) error {
+func (c *CacheKVStore) Append(key string, value interface{}) error {
 	var v string
 	switch sv := value.(type) {
 	case string:
@@ -142,9 +123,7 @@ func (c *CacheKVStoreConnection) Append(key string, value interface{}) error {
 	return nil
 }
 
-// SetAdd adds a value to the set stored under the key, creates a new set if
-// one doesn't exist. Evicts an old item if necessary.
-func (c *CacheKVStoreConnection) SetAdd(key string, value interface{}) error {
+func (c *CacheKVStore) SetAdd(key string, value interface{}) error {
 	svalue := fmt.Sprint(value)
 
 	c.mu.Lock()
@@ -175,9 +154,7 @@ func (c *CacheKVStoreConnection) SetAdd(key string, value interface{}) error {
 	return nil
 }
 
-// SetMembers returns the members of the set. It will return nil if there is
-// no such set, or if the item is not a set.
-func (c *CacheKVStoreConnection) SetMembers(key string) []interface{} {
+func (c *CacheKVStore) SetMembers(key string) []interface{} {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -203,7 +180,7 @@ func (c *CacheKVStoreConnection) SetMembers(key string) []interface{} {
 
 // Get fetches the key's value from the cache.
 // The ok result will be true if the item was found.
-func (c *CacheKVStoreConnection) Get(key string) interface{} {
+func (c *CacheKVStore) Get(key string) interface{} {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -217,28 +194,33 @@ func (c *CacheKVStoreConnection) Get(key string) interface{} {
 
 // RemoveOldest removes the oldest item in the cache and returns its key and value.
 // If the cache is empty, the empty string and nil are returned.
-func (c *CacheKVStoreConnection) RemoveOldest() (key string, value interface{}) {
+func (c *CacheKVStore) RemoveOldest() (key string, value interface{}) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	return c.removeOldest()
 }
 
-// note: must hold c.mu
-func (c *CacheKVStoreConnection) removeOldest() (key string, value interface{}) {
+func (c *CacheKVStore) removeOldest() (key string, value interface{}) {
 	ele := c.ll.Back()
 	if ele == nil {
 		return
 	}
+
 	c.ll.Remove(ele)
+
 	ent := ele.Value.(*entry)
+
 	delete(c.cache, ent.key)
+
 	return ent.key, ent.value
 
 }
 
 // Len returns the number of items in the cache.
-func (c *CacheKVStoreConnection) Len() int {
+func (c *CacheKVStore) Len() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	return c.ll.Len()
 }

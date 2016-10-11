@@ -1,144 +1,118 @@
 package gokvstores
 
 import (
-	"fmt"
-	"github.com/garyburd/redigo/redis"
 	"time"
+
+	redis "gopkg.in/redis.v5"
 )
 
-func newPool(host string, port int, password string, db int) *redis.Pool {
-	return &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+// ----------------------------------------------------------------------------
+// Client
+// ----------------------------------------------------------------------------
 
-			if err != nil {
-				return nil, err
-			}
-
-			if password != "" {
-				if _, err := c.Do("AUTH", password); err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-
-			if _, err := c.Do("SELECT", db); err != nil {
-				c.Close()
-				return nil, err
-			}
-			return c, err
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
+// RedisClient is an interface thats allows to use Redis cluster or a redis single client seamlessly.
+type RedisClient interface {
+	Ping() *redis.StatusCmd
+	Get(key string) *redis.StringCmd
+	Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd
+	SAdd(key string, members ...interface{}) *redis.IntCmd
+	SMembers(key string) *redis.StringSliceCmd
+	Exists(key string) *redis.BoolCmd
+	Append(key, value string) *redis.IntCmd
+	Del(keys ...string) *redis.IntCmd
+	FlushDb() *redis.StatusCmd
+	Close() error
+	Process(cmd redis.Cmder) error
 }
 
-func NewRedisKVStore(host string, port int, password string, db int) KVStore {
-	return &RedisKVStore{Pool: newPool(host, port, password, db)}
-}
+// ----------------------------------------------------------------------------
+// KVStore
+// ----------------------------------------------------------------------------
 
+// RedisKVStore is the Redis implementation of KVStore.
 type RedisKVStore struct {
-	Pool *redis.Pool
+	client     RedisClient
+	expiration time.Duration
 }
 
-func (k *RedisKVStore) Close() error {
-	return k.Pool.Close()
+func (r *RedisKVStore) Get(key string) interface{} {
+	cmd := redis.NewCmd("GET", key)
+	r.client.Process(cmd)
+	return cmd.Val()
 }
 
-func (k *RedisKVStore) Connection() KVStoreConnection {
-	return &RedisKVStoreConnection{Connection: k.Pool.Get()}
+func (r *RedisKVStore) Set(key string, value interface{}) error {
+	return r.client.Set(key, value, r.expiration).Err()
 }
 
-type RedisKVStoreConnection struct {
-	Connection redis.Conn
+func (r *RedisKVStore) SetAdd(key string, value interface{}) error {
+	return r.client.SAdd(key, value).Err()
 }
 
-func (k *RedisKVStoreConnection) Close() error {
-	return k.Connection.Close()
-}
-
-func (k *RedisKVStoreConnection) Flush() error {
-	return k.Connection.Flush()
-}
-
-func (k *RedisKVStoreConnection) Get(key string) interface{} {
-	reply, err := k.Connection.Do("GET", key)
-
-	if err != nil {
+func (r *RedisKVStore) SetMembers(key string) []interface{} {
+	vals := r.client.SMembers(key).Val()
+	if len(vals) == 0 {
 		return nil
 	}
 
-	return reply
+	newVals := make([]interface{}, len(vals))
+	for i, v := range vals {
+		newVals[i] = v
+	}
+
+	return newVals
 }
 
-func (k *RedisKVStoreConnection) Exists(key string) bool {
-	exists, err := redis.Bool(k.Connection.Do("EXISTS", key))
-
-	if err != nil {
-		return false
-	}
-
-	return exists
+func (r *RedisKVStore) Append(key string, value interface{}) error {
+	cmd := redis.NewIntCmd("append", key, value)
+	r.client.Process(cmd)
+	return cmd.Err()
 }
 
-func (k *RedisKVStoreConnection) Set(key string, value interface{}) error {
-	_, err := k.Connection.Do("SET", key, value)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (r *RedisKVStore) Close() error {
+	return r.client.Close()
 }
 
-func (k *RedisKVStoreConnection) Append(key string, value interface{}) error {
-	_, err := k.Connection.Do("APPEND", key, value)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (r *RedisKVStore) Flush() error {
+	return r.client.FlushDb().Err()
 }
 
-func (k *RedisKVStoreConnection) SetAdd(key string, value interface{}) error {
-	_, err := k.Connection.Do("SADD", key, value)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (r *RedisKVStore) Exists(key string) bool {
+	return r.client.Exists(key).Val()
 }
 
-func (k *RedisKVStoreConnection) SetMembers(key string) []interface{} {
-	reply, err := k.Connection.Do("SMEMBERS", key)
-
-	if err != nil {
-		return nil
-	}
-
-	values, err := Values(reply)
-	if err != nil {
-		return nil
-	}
-	if len(values) == 0 {
-		return nil
-	}
-
-	return values
+func (r *RedisKVStore) Delete(key string) error {
+	return r.client.Del(key).Err()
 }
 
-func (k *RedisKVStoreConnection) Delete(key string) error {
-	_, err := k.Connection.Do("DEL", key)
+// ----------------------------------------------------------------------------
+// Initializers
+// ----------------------------------------------------------------------------
 
-	if err != nil {
-		return err
+// NewRedisClientKVStore returns Redis client instance of KVStore.
+func NewRedisClientKVStore(options *redis.Options, expiration int) (KVStore, error) {
+	client := redis.NewClient(options)
+
+	if err := client.Ping().Err(); err != nil {
+		return nil, err
 	}
 
-	return nil
+	return &RedisKVStore{
+		client:     client,
+		expiration: time.Duration(expiration) * time.Second,
+	}, nil
+}
+
+// NewRedisClusterKVStore returns Redis cluster client instance of KVStore.
+func NewRedisClusterKVStore(options *redis.ClusterOptions, expiration int) (KVStore, error) {
+	client := redis.NewClusterClient(options)
+
+	if err := client.Ping().Err(); err != nil {
+		return nil, err
+	}
+
+	return &RedisKVStore{
+		client:     client,
+		expiration: time.Duration(expiration) * time.Second,
+	}, nil
 }

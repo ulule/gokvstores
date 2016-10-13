@@ -53,6 +53,20 @@ func (c *MemoryStore) SetSlice(key string, value []interface{}) error {
 	return nil
 }
 
+// AppendSlice appends values to the given slice.
+func (c *MemoryStore) AppendSlice(key string, values ...interface{}) error {
+	items, err := c.GetSlice(key)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range values {
+		items = append(items, item)
+	}
+
+	return c.cache.Replace(key, items, c.expiration)
+}
+
 // Close does nothing for this backend.
 func (c *MemoryStore) Close() error {
 	return nil

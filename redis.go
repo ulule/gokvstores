@@ -150,6 +150,11 @@ func (r *RedisStore) SetSlice(key string, values []interface{}) error {
 	return nil
 }
 
+// AppendSlice appends values to the given slice.
+func (r *RedisStore) AppendSlice(key string, values ...interface{}) error {
+	return r.SetSlice(key, values)
+}
+
 // Exists checks key existence.
 func (r *RedisStore) Exists(key string) (bool, error) {
 	cmd := r.client.Exists(key)

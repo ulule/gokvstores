@@ -84,12 +84,24 @@ func testStore(t *testing.T, store KVStore) {
 		err = store.SetSlice(key, expected)
 		is.Nil(err)
 
+		expectedStrings := stringSlice(expected)
+
 		v, err := store.GetSlice(key)
-		is.Equal(stringSlice(expected), stringSlice(v))
+		is.Equal(expectedStrings, stringSlice(v))
 
 		exists, err := store.Exists(key)
 		is.Nil(err)
 		is.True(exists)
+
+		err = store.AppendSlice(key, "append1", "append2")
+		is.Nil(err)
+
+		v, err = store.GetSlice(key)
+		is.Nil(err)
+
+		expectedStrings = append(expectedStrings, []string{"append1", "append2"}...)
+		sort.Strings(expectedStrings)
+		is.Equal(expectedStrings, stringSlice(v))
 
 		err = store.Delete(key)
 		is.Nil(err)
@@ -101,18 +113,4 @@ func testStore(t *testing.T, store KVStore) {
 		is.Nil(err)
 		is.False(exists)
 	}
-}
-
-func stringSlice(values []interface{}) []string {
-	converted := []string{}
-
-	for _, v := range values {
-		if v != nil {
-			converted = append(converted, conv.String(v))
-		}
-	}
-
-	sort.Strings(converted)
-
-	return converted
 }

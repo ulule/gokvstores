@@ -63,17 +63,17 @@ type RedisClusterOptions struct {
 }
 
 // ----------------------------------------------------------------------------
-// KVStore
+// Store
 // ----------------------------------------------------------------------------
 
-// RedisKVStore is the Redis implementation of KVStore.
-type RedisKVStore struct {
+// RedisStore is the Redis implementation of KVStore.
+type RedisStore struct {
 	client     RedisClient
 	expiration time.Duration
 }
 
 // Get returns value for the given key.
-func (r *RedisKVStore) Get(key string) (interface{}, error) {
+func (r *RedisStore) Get(key string) (interface{}, error) {
 	cmd := redis.NewCmd("get", key)
 
 	if err := r.client.Process(cmd); err != nil {
@@ -84,12 +84,12 @@ func (r *RedisKVStore) Get(key string) (interface{}, error) {
 }
 
 // Set sets the value for the given key.
-func (r *RedisKVStore) Set(key string, value interface{}) error {
+func (r *RedisStore) Set(key string, value interface{}) error {
 	return r.client.Set(key, value, r.expiration).Err()
 }
 
 // GetMap returns map for the given key.
-func (r *RedisKVStore) GetMap(key string) (map[string]interface{}, error) {
+func (r *RedisStore) GetMap(key string) (map[string]interface{}, error) {
 	values, err := r.client.HGetAll(key).Result()
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (r *RedisKVStore) GetMap(key string) (map[string]interface{}, error) {
 }
 
 // SetMap sets map for the given key.
-func (r *RedisKVStore) SetMap(key string, values map[string]interface{}) error {
+func (r *RedisStore) SetMap(key string, values map[string]interface{}) error {
 	newValues := make(map[string]string, len(values))
 
 	for k, v := range values {
@@ -119,7 +119,7 @@ func (r *RedisKVStore) SetMap(key string, values map[string]interface{}) error {
 }
 
 // GetSlice returns slice for the given key.
-func (r *RedisKVStore) GetSlice(key string) ([]interface{}, error) {
+func (r *RedisStore) GetSlice(key string) ([]interface{}, error) {
 	values, err := r.client.SMembers(key).Result()
 	if err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func (r *RedisKVStore) GetSlice(key string) ([]interface{}, error) {
 }
 
 // SetSlice sets map for the given key.
-func (r *RedisKVStore) SetSlice(key string, values []interface{}) error {
+func (r *RedisStore) SetSlice(key string, values []interface{}) error {
 	for _, v := range values {
 		if v != nil {
 			if err := r.client.SAdd(key, v).Err(); err != nil {
@@ -151,32 +151,28 @@ func (r *RedisKVStore) SetSlice(key string, values []interface{}) error {
 }
 
 // Exists checks key existence.
-func (r *RedisKVStore) Exists(key string) (bool, error) {
+func (r *RedisStore) Exists(key string) (bool, error) {
 	cmd := r.client.Exists(key)
 	return cmd.Val(), cmd.Err()
 }
 
 // Delete deletes key.
-func (r *RedisKVStore) Delete(key string) error {
+func (r *RedisStore) Delete(key string) error {
 	return r.client.Del(key).Err()
 }
 
 // Flush flushes the current database.
-func (r *RedisKVStore) Flush() error {
+func (r *RedisStore) Flush() error {
 	return r.client.FlushDb().Err()
 }
 
 // Close closes the client connection.
-func (r *RedisKVStore) Close() error {
+func (r *RedisStore) Close() error {
 	return r.client.Close()
 }
 
-// ----------------------------------------------------------------------------
-// Initializers
-// ----------------------------------------------------------------------------
-
-// NewRedisClientKVStore returns Redis client instance of KVStore.
-func NewRedisClientKVStore(options *RedisClientOptions, expiration time.Duration) (KVStore, error) {
+// NewRedisClientStore returns Redis client instance of KVStore.
+func NewRedisClientStore(options *RedisClientOptions, expiration time.Duration) (KVStore, error) {
 	opts := &redis.Options{
 		Network:            options.Network,
 		Addr:               options.Addr,
@@ -200,14 +196,14 @@ func NewRedisClientKVStore(options *RedisClientOptions, expiration time.Duration
 		return nil, err
 	}
 
-	return &RedisKVStore{
+	return &RedisStore{
 		client:     client,
 		expiration: expiration,
 	}, nil
 }
 
-// NewRedisClusterKVStore returns Redis cluster client instance of KVStore.
-func NewRedisClusterKVStore(options *RedisClusterOptions, expiration time.Duration) (KVStore, error) {
+// NewRedisClusterStore returns Redis cluster client instance of KVStore.
+func NewRedisClusterStore(options *RedisClusterOptions, expiration time.Duration) (KVStore, error) {
 	opts := &redis.ClusterOptions{
 		Addrs:              options.Addrs,
 		MaxRedirects:       options.MaxRedirects,
@@ -229,7 +225,7 @@ func NewRedisClusterKVStore(options *RedisClusterOptions, expiration time.Durati
 		return nil, err
 	}
 
-	return &RedisKVStore{
+	return &RedisStore{
 		client:     client,
 		expiration: expiration,
 	}, nil

@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRedis(t *testing.T) {
-	store, err := NewRedisClientKVStore(&RedisClientOptions{
+func TestRedisStore(t *testing.T) {
+	store, err := NewRedisClientStore(&RedisClientOptions{
 		Addr:     "localhost:6379",
 		Password: "",
 		DB:       0,

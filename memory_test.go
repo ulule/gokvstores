@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCache(t *testing.T) {
-	store, err := NewCacheKVStore(time.Second*10, time.Second*10)
+func TestMemoryStore(t *testing.T) {
+	store, err := NewMemoryStore(time.Second*10, time.Second*10)
 	assert.Nil(t, err)
 
 	testStore(t, store)

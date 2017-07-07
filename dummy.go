@@ -49,6 +49,11 @@ func (s DummyStore) Delete(key string) error {
 	return nil
 }
 
+// Return all keys matching pattern
+func (c *DummyStore) Keys(pattern string) ([]interface{}, error) {
+	return nil, nil
+}
+
 // Flush flushes the store.
 func (s DummyStore) Flush() error {
 	return nil

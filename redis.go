@@ -169,13 +169,19 @@ func (r *RedisStore) Delete(key string) error {
 
 // Keys returns all keys matching pattern.
 func (r *RedisStore) Keys(pattern string) ([]interface{}, error) {
-	values, err := r.client.Keys(key)
+	values, err := r.client.Keys(pattern).Result()
 
 	if len(values) == 0 {
 		return nil, nil
 	}
 
-	return values, err
+	newValues := make([]interface{}, len(values))
+
+	for _, v := range values {
+		newValues = append(newValues, v)
+	}
+
+	return newValues, err
 }
 
 // Flush flushes the current database.

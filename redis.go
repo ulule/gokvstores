@@ -172,13 +172,13 @@ func (r *RedisStore) Keys(pattern string) ([]interface{}, error) {
 	values, err := r.client.Keys(pattern).Result()
 
 	if len(values) == 0 {
-		return nil, nil
+		return nil, err
 	}
 
 	newValues := make([]interface{}, len(values))
 
-	for _, v := range values {
-		newValues = append(newValues, v)
+	for k, v := range values {
+		newValues[k] = v
 	}
 
 	return newValues, err

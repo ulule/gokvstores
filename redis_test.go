@@ -23,24 +23,24 @@ func TestRedisStore(t *testing.T) {
 	is := assert.New(t)
 
 	mapResults := map[string]map[string]interface{}{
-		"key1": {"language": "go"},
-		"key2": {"integer": "1"},
-		"key3": {"float": "20.2"},
+		"order1": {"language": "go"},
+		"order2": {"integer": "1"},
+		"order3": {"float": "20.2"},
 	}
-	expectedStrings := []string{"key1", "key2", "key3"}
+	expectedStrings := []string{"order1", "order2", "order3"}
 
 	for key, expected := range mapResults {
 		err = store.SetMap(key, expected)
 		is.Nil(err)
 	}
 
-	values, err := store.Keys("key*")
+	values, err := store.Keys("order*")
 	is.Nil(err)
 
 	sort.Strings(expectedStrings)
 	result := make([]string, len(values))
-	for _, v := range values {
-		result = append(result, conv.String(v))
+	for k, v := range values {
+		result[k] = conv.String(v)
 	}
 	sort.Strings(result)
 

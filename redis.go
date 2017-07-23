@@ -26,6 +26,7 @@ type RedisClient interface {
 	HMSet(key string, fields map[string]string) *redis.StatusCmd
 	SMembers(key string) *redis.StringSliceCmd
 	SAdd(key string, members ...interface{}) *redis.IntCmd
+	Keys(pattern string) *redis.StringSliceCmd
 }
 
 // RedisClientOptions are Redis client options.
@@ -164,6 +165,23 @@ func (r *RedisStore) Exists(key string) (bool, error) {
 // Delete deletes key.
 func (r *RedisStore) Delete(key string) error {
 	return r.client.Del(key).Err()
+}
+
+// Keys returns all keys matching pattern.
+func (r *RedisStore) Keys(pattern string) ([]interface{}, error) {
+	values, err := r.client.Keys(pattern).Result()
+
+	if len(values) == 0 {
+		return nil, err
+	}
+
+	newValues := make([]interface{}, len(values))
+
+	for k, v := range values {
+		newValues[k] = v
+	}
+
+	return newValues, err
 }
 
 // Flush flushes the current database.

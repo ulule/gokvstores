@@ -39,6 +39,9 @@ type KVStore interface {
 	// Flush flushes the store.
 	Flush() error
 
+	// Return all keys matching pattern
+	Keys(pattern string) ([]interface{}, error)
+
 	// Close closes the connection to the store.
 	Close() error
 }

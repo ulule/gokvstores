@@ -1,9 +1,11 @@
 package gokvstores
 
 import (
+	"sort"
 	"testing"
 	"time"
 
+	conv "github.com/cstockton/go-conv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,6 +19,32 @@ func TestRedisStore(t *testing.T) {
 	assert.Nil(t, err)
 
 	testStore(t, store)
+
+	is := assert.New(t)
+
+	mapResults := map[string]map[string]interface{}{
+		"order1": {"language": "go"},
+		"order2": {"integer": "1"},
+		"order3": {"float": "20.2"},
+	}
+	expectedStrings := []string{"order1", "order2", "order3"}
+
+	for key, expected := range mapResults {
+		err = store.SetMap(key, expected)
+		is.Nil(err)
+	}
+
+	values, err := store.Keys("order*")
+	is.Nil(err)
+
+	sort.Strings(expectedStrings)
+	result := make([]string, len(values))
+	for k, v := range values {
+		result[k] = conv.String(v)
+	}
+	sort.Strings(result)
+
+	is.Equal(expectedStrings, result)
 
 	assert.Nil(t, store.Close())
 }

@@ -33,6 +33,19 @@ func (c *MemoryStore) GetMap(key string) (map[string]interface{}, error) {
 	return nil, nil
 }
 
+// GetMaps returns maps for the given keys.
+func (c *MemoryStore) GetMaps(keys []string) (map[string]map[string]interface{}, error) {
+	values := make(map[string]map[string]interface{}, len(keys))
+	for _, v := range keys {
+		value, _ := c.GetMap(v)
+		if value != nil {
+			values[v] = value
+		}
+	}
+
+	return values, nil
+}
+
 // SetMap sets a map for the given key.
 func (c *MemoryStore) SetMap(key string, value map[string]interface{}) error {
 	c.cache.Set(key, value, c.expiration)

@@ -17,6 +17,9 @@ type KVStore interface {
 	// GetMap returns map for the given key.
 	GetMap(key string) (map[string]interface{}, error)
 
+	// GetMaps returns maps for the given keys.
+	GetMaps(keys []string) (map[string]map[string]interface{}, error)
+
 	// SetMap sets map for the given key.
 	SetMap(key string, value map[string]interface{}) error
 

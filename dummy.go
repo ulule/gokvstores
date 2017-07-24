@@ -18,6 +18,11 @@ func (s DummyStore) GetMap(key string) (map[string]interface{}, error) {
 	return nil, nil
 }
 
+// GetMaps returns maps for the given keys.
+func (s *DummyStore) GetMaps(keys []string) (map[string]map[string]interface{}, error) {
+	return nil, nil
+}
+
 // SetMap sets map for the given key.
 func (s DummyStore) SetMap(key string, value map[string]interface{}) error {
 	return nil

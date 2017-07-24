@@ -60,7 +60,17 @@ func testStore(t *testing.T, store KVStore) {
 		exists, err := store.Exists(key)
 		is.Nil(err)
 		is.True(exists)
+	}
 
+	keys := []string{"key1", "key2", "key3"}
+
+	results, err := store.GetMaps(keys)
+
+	for key, result := range results {
+		is.Equal(result, mapResults[key])
+	}
+
+	for key, _ := range mapResults {
 		err = store.Delete(key)
 		is.Nil(err)
 
@@ -112,5 +122,7 @@ func testStore(t *testing.T, store KVStore) {
 		exists, err = store.Exists(key)
 		is.Nil(err)
 		is.False(exists)
+
 	}
+
 }

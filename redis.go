@@ -27,6 +27,7 @@ type RedisClient interface {
 	SMembers(key string) *redis.StringSliceCmd
 	SAdd(key string, members ...interface{}) *redis.IntCmd
 	Keys(pattern string) *redis.StringSliceCmd
+	Pipeline() *redis.Pipeline
 }
 
 // RedisClientOptions are Redis client options.
@@ -103,6 +104,41 @@ func (r *RedisStore) GetMap(key string) (map[string]interface{}, error) {
 	newValues := make(map[string]interface{}, len(values))
 	for k, v := range values {
 		newValues[k] = v
+	}
+
+	return newValues, nil
+}
+
+// GetMaps returns maps for the given keys.
+func (r *RedisStore) GetMaps(keys []string) (map[string]map[string]interface{}, error) {
+	pipe := r.client.Pipeline()
+
+	commands := make(map[string]*redis.StringStringMapCmd, len(keys))
+	for _, key := range keys {
+		commands[key] = pipe.HGetAll(key)
+	}
+
+	_, err := pipe.Exec()
+
+	if err != nil {
+		return nil, err
+	}
+
+	newValues := make(map[string]map[string]interface{}, len(keys))
+
+	for key, cmd := range commands {
+		values, _ := cmd.Result()
+
+		if values != nil {
+			valueMap := make(map[string]interface{}, len(values))
+			for k, v := range values {
+				valueMap[k] = v
+			}
+
+			newValues[key] = valueMap
+		} else {
+			newValues[key] = nil
+		}
 	}
 
 	return newValues, nil

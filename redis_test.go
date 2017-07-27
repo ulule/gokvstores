@@ -31,11 +31,11 @@ func TestRedisStore(t *testing.T) {
 
 	for key, expected := range mapResults {
 		err = store.SetMap(key, expected)
-		is.Nil(err)
+		is.NoError(err)
 	}
 
 	values, err := store.Keys("order*")
-	is.Nil(err)
+	is.NoError(err)
 
 	sort.Strings(expectedStrings)
 	result := make([]string, len(values))

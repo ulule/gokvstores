@@ -30,6 +30,10 @@ type RedisClient interface {
 	Pipeline() *redis.Pipeline
 }
 
+type RedisPipeline struct {
+	pipeline *redis.Pipeline
+}
+
 // RedisClientOptions are Redis client options.
 type RedisClientOptions struct {
 	Network            string
@@ -104,41 +108,6 @@ func (r *RedisStore) GetMap(key string) (map[string]interface{}, error) {
 	newValues := make(map[string]interface{}, len(values))
 	for k, v := range values {
 		newValues[k] = v
-	}
-
-	return newValues, nil
-}
-
-// GetMaps returns maps for the given keys.
-func (r *RedisStore) GetMaps(keys []string) (map[string]map[string]interface{}, error) {
-	pipe := r.client.Pipeline()
-
-	commands := make(map[string]*redis.StringStringMapCmd, len(keys))
-	for _, key := range keys {
-		commands[key] = pipe.HGetAll(key)
-	}
-
-	_, err := pipe.Exec()
-
-	if err != nil {
-		return nil, err
-	}
-
-	newValues := make(map[string]map[string]interface{}, len(keys))
-
-	for key, cmd := range commands {
-		values, _ := cmd.Result()
-
-		if values != nil {
-			valueMap := make(map[string]interface{}, len(values))
-			for k, v := range values {
-				valueMap[k] = v
-			}
-
-			newValues[key] = valueMap
-		} else {
-			newValues[key] = nil
-		}
 	}
 
 	return newValues, nil
@@ -288,4 +257,117 @@ func NewRedisClusterStore(options *RedisClusterOptions, expiration time.Duration
 		client:     client,
 		expiration: expiration,
 	}, nil
+}
+
+// Pipeline uses pipeline as a Redis client to execute multiple calls at once
+func (r *RedisStore) Pipeline(f func(r *RedisStore) error) error {
+	pipe := r.client.Pipeline()
+
+	redisPipeline := RedisPipeline{
+		pipeline: pipe,
+	}
+
+	store := &RedisStore{
+		client:     redisPipeline,
+		expiration: r.expiration,
+	}
+
+	err := f(store)
+	if err != nil {
+		return err
+	}
+
+	_, err = pipe.Exec()
+
+	return err
+}
+
+// GetMaps returns maps for the given keys.
+func (r *RedisStore) GetMaps(keys []string) (map[string]map[string]interface{}, error) {
+	pipe := r.client.Pipeline()
+
+	commands := make(map[string]*redis.StringStringMapCmd, len(keys))
+	for _, key := range keys {
+		commands[key] = pipe.HGetAll(key)
+	}
+
+	_, err := pipe.Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	newValues := make(map[string]map[string]interface{}, len(keys))
+
+	for key, cmd := range commands {
+		values, _ := cmd.Result()
+
+		if values != nil {
+			valueMap := make(map[string]interface{}, len(values))
+			for k, v := range values {
+				valueMap[k] = v
+			}
+
+			newValues[key] = valueMap
+		} else {
+			newValues[key] = nil
+		}
+	}
+
+	return newValues, nil
+}
+
+func (r *RedisPipeline) Pipeline() *redis.Pipeline {
+	return r.pipeline
+}
+
+func (r *RedisPipeline) Ping() *redis.StatusCmd {
+	return r.pipeline.Ping()
+}
+
+func (r *RedisPipeline) Exists(key string) *redis.BoolCmd {
+	return r.pipeline.Exists(key)
+}
+
+func (r *RedisPipeline) Del(keys ...string) *redis.IntCmd {
+	return r.pipeline.Del(keys...)
+}
+
+func (r *RedisPipeline) FlushDb() *redis.StatusCmd {
+	return r.pipeline.FlushDb()
+}
+
+func (r *RedisPipeline) Close() error {
+	return r.pipeline.Close()
+}
+
+func (r *RedisPipeline) Process(cmd redis.Cmder) error {
+	return r.pipeline.Process(cmd)
+}
+
+func (r *RedisPipeline) Get(key string) *redis.StringCmd {
+	return r.pipeline.Get(key)
+}
+
+func (r *RedisPipeline) Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
+	return r.pipeline.Set(key, value, expiration)
+}
+
+func (r *RedisPipeline) HGetAll(key string) *redis.StringStringMapCmd {
+	return r.pipeline.HGetAll(key)
+}
+
+func (r *RedisPipeline) HMSet(key string, fields map[string]string) *redis.StatusCmd {
+	return r.pipeline.HMSet(key, fields)
+}
+
+func (r *RedisPipeline) SMembers(key string) *redis.StringSliceCmd {
+	return r.pipeline.SMembers(key)
+}
+
+func (r *RedisPipeline) SAdd(key string, members ...interface{}) *redis.IntCmd {
+	return r.pipeline.SAdd(key, members...)
+}
+
+func (r *RedisPipeline) Keys(pattern string) *redis.StringSliceCmd {
+	return r.pipeline.Keys(pattern)
 }

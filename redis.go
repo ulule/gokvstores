@@ -316,58 +316,58 @@ func (r *RedisStore) GetMaps(keys []string) (map[string]map[string]interface{}, 
 	return newValues, nil
 }
 
-func (r *RedisPipeline) Pipeline() *redis.Pipeline {
+func (r RedisPipeline) Pipeline() *redis.Pipeline {
 	return r.pipeline
 }
 
-func (r *RedisPipeline) Ping() *redis.StatusCmd {
+func (r RedisPipeline) Ping() *redis.StatusCmd {
 	return r.pipeline.Ping()
 }
 
-func (r *RedisPipeline) Exists(key string) *redis.BoolCmd {
+func (r RedisPipeline) Exists(key string) *redis.BoolCmd {
 	return r.pipeline.Exists(key)
 }
 
-func (r *RedisPipeline) Del(keys ...string) *redis.IntCmd {
+func (r RedisPipeline) Del(keys ...string) *redis.IntCmd {
 	return r.pipeline.Del(keys...)
 }
 
-func (r *RedisPipeline) FlushDb() *redis.StatusCmd {
+func (r RedisPipeline) FlushDb() *redis.StatusCmd {
 	return r.pipeline.FlushDb()
 }
 
-func (r *RedisPipeline) Close() error {
+func (r RedisPipeline) Close() error {
 	return r.pipeline.Close()
 }
 
-func (r *RedisPipeline) Process(cmd redis.Cmder) error {
+func (r RedisPipeline) Process(cmd redis.Cmder) error {
 	return r.pipeline.Process(cmd)
 }
 
-func (r *RedisPipeline) Get(key string) *redis.StringCmd {
+func (r RedisPipeline) Get(key string) *redis.StringCmd {
 	return r.pipeline.Get(key)
 }
 
-func (r *RedisPipeline) Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
+func (r RedisPipeline) Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
 	return r.pipeline.Set(key, value, expiration)
 }
 
-func (r *RedisPipeline) HGetAll(key string) *redis.StringStringMapCmd {
+func (r RedisPipeline) HGetAll(key string) *redis.StringStringMapCmd {
 	return r.pipeline.HGetAll(key)
 }
 
-func (r *RedisPipeline) HMSet(key string, fields map[string]string) *redis.StatusCmd {
+func (r RedisPipeline) HMSet(key string, fields map[string]string) *redis.StatusCmd {
 	return r.pipeline.HMSet(key, fields)
 }
 
-func (r *RedisPipeline) SMembers(key string) *redis.StringSliceCmd {
+func (r RedisPipeline) SMembers(key string) *redis.StringSliceCmd {
 	return r.pipeline.SMembers(key)
 }
 
-func (r *RedisPipeline) SAdd(key string, members ...interface{}) *redis.IntCmd {
+func (r RedisPipeline) SAdd(key string, members ...interface{}) *redis.IntCmd {
 	return r.pipeline.SAdd(key, members...)
 }
 
-func (r *RedisPipeline) Keys(pattern string) *redis.StringSliceCmd {
+func (r RedisPipeline) Keys(pattern string) *redis.StringSliceCmd {
 	return r.pipeline.Keys(pattern)
 }

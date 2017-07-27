@@ -46,14 +46,14 @@ type KVStore interface {
 	Close() error
 }
 
-func stringSlice(values []interface{}) []string {
+func stringSlice(values []interface{}) ([]string, error) {
 	converted := []string{}
 
 	for _, v := range values {
 		if v != nil {
 			val, err := conv.String(v)
 			if err != nil {
-				continue
+				return nil, err
 			}
 
 			converted = append(converted, val)
@@ -62,5 +62,5 @@ func stringSlice(values []interface{}) []string {
 
 	sort.Strings(converted)
 
-	return converted
+	return converted, nil
 }

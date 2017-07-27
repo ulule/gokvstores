@@ -22,7 +22,9 @@ func testStore(t *testing.T, store KVStore) {
 	// Get
 
 	v, err := store.Get("key")
-	is.Equal("value", conv.String(v))
+	val, err := conv.String(v)
+	is.NoError(err)
+	is.Equal("value", val)
 
 	// Exists
 

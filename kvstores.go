@@ -51,7 +51,12 @@ func stringSlice(values []interface{}) []string {
 
 	for _, v := range values {
 		if v != nil {
-			converted = append(converted, conv.String(v))
+			val, err := conv.String(v)
+			if err != nil {
+				continue
+			}
+
+			converted = append(converted, val)
 		}
 	}
 

@@ -14,35 +14,54 @@ func testStore(t *testing.T, store KVStore) {
 	err := store.Flush()
 	is.NoError(err)
 
-	// Set
+	itemResults := map[string]interface{}{
+		"key1": "1",
+		"key2": "2",
+		"key3": "3",
+	}
 
-	err = store.Set("key", "value")
-	is.NoError(err)
+	for key, expected := range itemResults {
+		// Set
 
-	// Get
+		err = store.Set(key, expected)
+		is.NoError(err)
 
-	v, err := store.Get("key")
-	val, err := conv.String(v)
-	is.NoError(err)
-	is.Equal("value", val)
+		// Get
 
-	// Exists
+		v, err := store.Get(key)
+		val, err := conv.String(v)
+		is.NoError(err)
+		is.Equal(expected, val)
 
-	exists, err := store.Exists("key")
-	is.NoError(err)
-	is.True(exists)
+		exists, err := store.Exists(key)
+		is.NoError(err)
+		is.True(exists)
 
-	// Delete
+	}
 
-	err = store.Delete("key")
-	is.NoError(err)
+	keys := []string{"key1", "key2", "key3"}
 
-	v, _ = store.Get("key")
-	is.Nil(v)
+	mResults, err := store.MGet(keys)
 
-	exists, err = store.Exists("key")
-	is.NoError(err)
-	is.False(exists)
+	for key, result := range mResults {
+		val, err := conv.String(result)
+		is.NoError(err)
+		is.Equal(val, itemResults[key])
+	}
+
+	for key := range itemResults {
+		// Delete
+
+		err = store.Delete(key)
+		is.NoError(err)
+
+		v, _ := store.Get(key)
+		is.Nil(v)
+
+		exists, err := store.Exists(key)
+		is.NoError(err)
+		is.False(exists)
+	}
 
 	// Map
 
@@ -64,8 +83,6 @@ func testStore(t *testing.T, store KVStore) {
 		is.True(exists)
 	}
 
-	keys := []string{"key1", "key2", "key3"}
-
 	results, err := store.GetMaps(keys)
 	is.NoError(err)
 
@@ -77,10 +94,10 @@ func testStore(t *testing.T, store KVStore) {
 		err = store.Delete(key)
 		is.NoError(err)
 
-		v, _ = store.GetMap(key)
+		v, _ := store.GetMap(key)
 		is.Nil(v)
 
-		exists, err = store.Exists(key)
+		exists, err := store.Exists(key)
 		is.NoError(err)
 		is.False(exists)
 	}

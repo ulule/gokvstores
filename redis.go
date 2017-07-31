@@ -22,6 +22,7 @@ type RedisClient interface {
 	Process(cmd redis.Cmder) error
 	Get(key string) *redis.StringCmd
 	Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd
+	MGet(keys ...string) *redis.SliceCmd
 	HGetAll(key string) *redis.StringStringMapCmd
 	HMSet(key string, fields map[string]string) *redis.StatusCmd
 	SMembers(key string) *redis.StringSliceCmd
@@ -87,6 +88,23 @@ func (r *RedisStore) Get(key string) (interface{}, error) {
 	}
 
 	return cmd.Val(), cmd.Err()
+}
+
+// MGet returns map of key, value for a list of keys.
+func (r *RedisStore) MGet(keys []string) (map[string]interface{}, error) {
+	values, err := r.client.MGet(keys...).Result()
+
+	newValues := make(map[string]interface{}, len(keys))
+
+	for k, v := range keys {
+		value := values[k]
+		if err != nil {
+			return nil, err
+		}
+
+		newValues[v] = value
+	}
+	return newValues, nil
 }
 
 // Set sets the value for the given key.
@@ -357,6 +375,11 @@ func (r RedisPipeline) Process(cmd redis.Cmder) error {
 // Get implements RedisClient Get for pipeline
 func (r RedisPipeline) Get(key string) *redis.StringCmd {
 	return r.pipeline.Get(key)
+}
+
+// MGet implements RedisClient MGet for pipeline
+func (r RedisPipeline) MGet(keys ...string) *redis.SliceCmd {
+	return r.pipeline.MGet(keys...)
 }
 
 // Set implements RedisClient Set for pipeline

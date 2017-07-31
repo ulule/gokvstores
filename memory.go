@@ -19,6 +19,16 @@ func (c *MemoryStore) Get(key string) (interface{}, error) {
 	return item, nil
 }
 
+// MGet returns map of key, value for a list of keys.
+func (c *MemoryStore) MGet(keys []string) (map[string]interface{}, error) {
+	results := make(map[string]interface{}, len(keys))
+	for _, key := range keys {
+		item, _ := c.Get(key)
+		results[key] = item
+	}
+	return results, nil
+}
+
 // Set sets value in the cache.
 func (c *MemoryStore) Set(key string, value interface{}) error {
 	c.cache.Set(key, value, c.expiration)
@@ -31,6 +41,19 @@ func (c *MemoryStore) GetMap(key string) (map[string]interface{}, error) {
 		return v.(map[string]interface{}), nil
 	}
 	return nil, nil
+}
+
+// GetMaps returns maps for the given keys.
+func (c *MemoryStore) GetMaps(keys []string) (map[string]map[string]interface{}, error) {
+	values := make(map[string]map[string]interface{}, len(keys))
+	for _, v := range keys {
+		value, _ := c.GetMap(v)
+		if value != nil {
+			values[v] = value
+		}
+	}
+
+	return values, nil
 }
 
 // SetMap sets a map for the given key.

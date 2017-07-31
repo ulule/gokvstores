@@ -11,11 +11,17 @@ type KVStore interface {
 	// Get returns value for the given key.
 	Get(key string) (interface{}, error)
 
+	// MGet returns map of key, value for a list of keys.
+	MGet(keys []string) (map[string]interface{}, error)
+
 	// Set sets value for the given key.
 	Set(key string, value interface{}) error
 
 	// GetMap returns map for the given key.
 	GetMap(key string) (map[string]interface{}, error)
+
+	// GetMaps returns maps for the given keys.
+	GetMaps(keys []string) (map[string]map[string]interface{}, error)
 
 	// SetMap sets map for the given key.
 	SetMap(key string, value map[string]interface{}) error

@@ -12,37 +12,56 @@ func testStore(t *testing.T, store KVStore) {
 	is := assert.New(t)
 
 	err := store.Flush()
-	is.Nil(err)
-
-	// Set
-
-	err = store.Set("key", "value")
-	is.Nil(err)
-
-	// Get
-
-	v, err := store.Get("key")
-	val, err := conv.String(v)
 	is.NoError(err)
-	is.Equal("value", val)
 
-	// Exists
+	itemResults := map[string]interface{}{
+		"key1": "1",
+		"key2": "2",
+		"key3": "3",
+	}
 
-	exists, err := store.Exists("key")
-	is.Nil(err)
-	is.True(exists)
+	for key, expected := range itemResults {
+		// Set
 
-	// Delete
+		err = store.Set(key, expected)
+		is.NoError(err)
 
-	err = store.Delete("key")
-	is.Nil(err)
+		// Get
 
-	v, _ = store.Get("key")
-	is.Nil(v)
+		v, err := store.Get(key)
+		val, err := conv.String(v)
+		is.NoError(err)
+		is.Equal(expected, val)
 
-	exists, err = store.Exists("key")
-	is.Nil(err)
-	is.False(exists)
+		exists, err := store.Exists(key)
+		is.NoError(err)
+		is.True(exists)
+
+	}
+
+	keys := []string{"key1", "key2", "key3"}
+
+	mResults, err := store.MGet(keys)
+
+	for key, result := range mResults {
+		val, err := conv.String(result)
+		is.NoError(err)
+		is.Equal(val, itemResults[key])
+	}
+
+	for key := range itemResults {
+		// Delete
+
+		err = store.Delete(key)
+		is.NoError(err)
+
+		v, _ := store.Get(key)
+		is.Nil(v)
+
+		exists, err := store.Exists(key)
+		is.NoError(err)
+		is.False(exists)
+	}
 
 	// Map
 
@@ -54,23 +73,32 @@ func testStore(t *testing.T, store KVStore) {
 
 	for key, expected := range mapResults {
 		err = store.SetMap(key, expected)
-		is.Nil(err)
+		is.NoError(err)
 
 		v, err := store.GetMap(key)
 		is.Equal(expected, v)
 
 		exists, err := store.Exists(key)
-		is.Nil(err)
+		is.NoError(err)
 		is.True(exists)
+	}
 
+	results, err := store.GetMaps(keys)
+	is.NoError(err)
+
+	for key, result := range results {
+		is.Equal(result, mapResults[key])
+	}
+
+	for key := range mapResults {
 		err = store.Delete(key)
-		is.Nil(err)
+		is.NoError(err)
 
-		v, _ = store.GetMap(key)
+		v, _ := store.GetMap(key)
 		is.Nil(v)
 
-		exists, err = store.Exists(key)
-		is.Nil(err)
+		exists, err := store.Exists(key)
+		is.NoError(err)
 		is.False(exists)
 	}
 
@@ -84,7 +112,7 @@ func testStore(t *testing.T, store KVStore) {
 
 	for key, expected := range sliceResults {
 		err = store.SetSlice(key, expected)
-		is.Nil(err)
+		is.NoError(err)
 
 		expectedStrings, err := stringSlice(expected)
 		is.NoError(err)
@@ -96,14 +124,14 @@ func testStore(t *testing.T, store KVStore) {
 		is.Equal(expectedStrings, strings)
 
 		exists, err := store.Exists(key)
-		is.Nil(err)
+		is.NoError(err)
 		is.True(exists)
 
 		err = store.AppendSlice(key, "append1", "append2")
-		is.Nil(err)
+		is.NoError(err)
 
 		v, err = store.GetSlice(key)
-		is.Nil(err)
+		is.NoError(err)
 
 		expectedStrings = append(expectedStrings, []string{"append1", "append2"}...)
 		sort.Strings(expectedStrings)
@@ -112,13 +140,15 @@ func testStore(t *testing.T, store KVStore) {
 		is.Equal(expectedStrings, values)
 
 		err = store.Delete(key)
-		is.Nil(err)
+		is.NoError(err)
 
 		v, _ = store.GetSlice(key)
 		is.Nil(v)
 
 		exists, err = store.Exists(key)
-		is.Nil(err)
+		is.NoError(err)
 		is.False(exists)
+
 	}
+
 }

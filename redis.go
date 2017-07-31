@@ -31,6 +31,7 @@ type RedisClient interface {
 	Pipeline() *redis.Pipeline
 }
 
+// RedisPipeline is a struct which contains an opend redis pipeline transaction
 type RedisPipeline struct {
 	pipeline *redis.Pipeline
 }

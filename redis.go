@@ -118,7 +118,12 @@ func (r *RedisStore) SetMap(key string, values map[string]interface{}) error {
 	newValues := make(map[string]string, len(values))
 
 	for k, v := range values {
-		newValues[k] = conv.String(v)
+		val, err := conv.String(v)
+		if err != nil {
+			return err
+		}
+
+		newValues[k] = val
 	}
 
 	return r.client.HMSet(key, newValues).Err()

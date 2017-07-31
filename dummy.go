@@ -9,7 +9,7 @@ func (DummyStore) Get(key string) (interface{}, error) {
 }
 
 // MGet returns map of key, value for a list of keys.
-func (DummyStore) MGet(keys []string) (interface{}, error) {
+func (DummyStore) MGet(keys []string) (map[string]interface{}, error) {
 	return nil, nil
 }
 

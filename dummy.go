@@ -59,7 +59,7 @@ func (DummyStore) Delete(key string) error {
 	return nil
 }
 
-// Return all keys matching pattern
+// Keys returns all keys matching pattern
 func (DummyStore) Keys(pattern string) ([]interface{}, error) {
 	return nil, nil
 }

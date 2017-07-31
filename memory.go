@@ -107,7 +107,7 @@ func (c *MemoryStore) Delete(key string) error {
 	return nil
 }
 
-// Return all keys matching pattern
+// Keys returns all keys matching pattern
 func (c *MemoryStore) Keys(pattern string) ([]interface{}, error) {
 	return nil, nil
 }

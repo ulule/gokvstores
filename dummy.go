@@ -8,6 +8,11 @@ func (DummyStore) Get(key string) (interface{}, error) {
 	return nil, nil
 }
 
+// MGet returns map of key, value for a list of keys.
+func (DummyStore) MGet(keys []string) (map[string]interface{}, error) {
+	return nil, nil
+}
+
 // Set sets value for the given key.
 func (DummyStore) Set(key string, value interface{}) error {
 	return nil

@@ -40,7 +40,7 @@ func TestRedisStore(t *testing.T) {
 	sort.Strings(expectedStrings)
 	result := make([]string, len(values))
 	for k, v := range values {
-		result[k] = conv.String(v)
+		result[k], _ = conv.String(v)
 	}
 	sort.Strings(result)
 

@@ -113,6 +113,11 @@ func (r *RedisStore) Set(key string, value interface{}) error {
 	return r.client.Set(key, value, r.expiration).Err()
 }
 
+// SetWithExpiration sets the value for the given key.
+func (r *RedisStore) SetWithExpiration(key string, value interface{}, expiration time.Duration) error {
+	return r.client.Set(key, value, expiration).Err()
+}
+
 // GetMap returns map for the given key.
 func (r *RedisStore) GetMap(key string) (map[string]interface{}, error) {
 	values, err := r.client.HGetAll(key).Result()

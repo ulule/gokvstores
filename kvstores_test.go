@@ -3,6 +3,7 @@ package gokvstores
 import (
 	"sort"
 	"testing"
+	"time"
 
 	conv "github.com/cstockton/go-conv"
 	"github.com/stretchr/testify/assert"
@@ -150,5 +151,24 @@ func testStore(t *testing.T, store KVStore) {
 		is.False(exists)
 
 	}
+
+	// Test set with duration
+	expiration := 1
+	err = store.SetWithExpiration("foo", "bar", time.Duration(expiration)*time.Second)
+	is.NoError(err)
+
+	v, err := store.Get("foo")
+	val, err := conv.String(v)
+	is.NoError(err)
+	is.Equal("bar", val)
+
+	time.Sleep(time.Duration(expiration) * time.Second)
+
+	v, _ = store.Get("foo")
+	is.Nil(v)
+
+	exists, err := store.Exists("foo")
+	is.NoError(err)
+	is.False(exists)
 
 }

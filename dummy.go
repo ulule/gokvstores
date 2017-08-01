@@ -1,5 +1,7 @@
 package gokvstores
 
+import "time"
+
 // DummyStore is a noop store (caching disabled).
 type DummyStore struct{}
 
@@ -15,6 +17,11 @@ func (DummyStore) MGet(keys []string) (map[string]interface{}, error) {
 
 // Set sets value for the given key.
 func (DummyStore) Set(key string, value interface{}) error {
+	return nil
+}
+
+// SetWithExpiration sets the value for the given key for a specified duration.
+func (DummyStore) SetWithExpiration(key string, value interface{}, expiration time.Duration) error {
 	return nil
 }
 

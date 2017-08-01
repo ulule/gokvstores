@@ -35,6 +35,12 @@ func (c *MemoryStore) Set(key string, value interface{}) error {
 	return nil
 }
 
+// SetWithExpiration sets the value for the given key for a specified duration.
+func (c *MemoryStore) SetWithExpiration(key string, value interface{}, expiration time.Duration) error {
+	c.cache.Set(key, value, expiration)
+	return nil
+}
+
 // GetMap returns map for the given key.
 func (c *MemoryStore) GetMap(key string) (map[string]interface{}, error) {
 	if v, found := c.cache.Get(key); found {

@@ -154,7 +154,7 @@ func testStore(t *testing.T, store KVStore) {
 
 	// Test set with duration
 	expiration := 1
-	err = store.SetWithExpiration("foo", "bar", time.Duration(expiration)*time.Second)
+	err = store.Set("foo", "bar", WithExpiration(time.Duration(expiration)*time.Second))
 	is.NoError(err)
 
 	v, err := store.Get("foo")

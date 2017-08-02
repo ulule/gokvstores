@@ -109,12 +109,14 @@ func (r *RedisStore) MGet(keys []string) (map[string]interface{}, error) {
 }
 
 // Set sets the value for the given key.
-func (r *RedisStore) Set(key string, value interface{}) error {
-	return r.client.Set(key, value, r.expiration).Err()
-}
+func (r *RedisStore) Set(key string, value interface{}, opts ...Option) error {
+	expiration := r.expiration
 
-// SetWithExpiration sets the value for the given key.
-func (r *RedisStore) SetWithExpiration(key string, value interface{}, expiration time.Duration) error {
+	opt := newOptions(opts...)
+	if opt.Expiration != 0 {
+		expiration = opt.Expiration
+	}
+
 	return r.client.Set(key, value, expiration).Err()
 }
 

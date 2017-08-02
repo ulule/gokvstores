@@ -2,7 +2,6 @@ package gokvstores
 
 import (
 	"sort"
-	"time"
 
 	conv "github.com/cstockton/go-conv"
 )
@@ -16,10 +15,7 @@ type KVStore interface {
 	MGet(keys []string) (map[string]interface{}, error)
 
 	// Set sets value for the given key.
-	Set(key string, value interface{}) error
-
-	// SetWithExpiration sets the value for the given key for a specified duration.
-	SetWithExpiration(key string, value interface{}, expiration time.Duration) error
+	Set(key string, value interface{}, opts ...Option) error
 
 	// GetMap returns map for the given key.
 	GetMap(key string) (map[string]interface{}, error)

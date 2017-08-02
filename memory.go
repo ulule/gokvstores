@@ -30,14 +30,16 @@ func (c *MemoryStore) MGet(keys []string) (map[string]interface{}, error) {
 }
 
 // Set sets value in the cache.
-func (c *MemoryStore) Set(key string, value interface{}) error {
-	c.cache.Set(key, value, c.expiration)
-	return nil
-}
+func (c *MemoryStore) Set(key string, value interface{}, opts ...Option) error {
+	expiration := c.expiration
 
-// SetWithExpiration sets the value for the given key for a specified duration.
-func (c *MemoryStore) SetWithExpiration(key string, value interface{}, expiration time.Duration) error {
+	opt := newOptions(opts...)
+	if opt.Expiration != 0 {
+		expiration = opt.Expiration
+	}
+
 	c.cache.Set(key, value, expiration)
+
 	return nil
 }
 

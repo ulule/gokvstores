@@ -2,6 +2,7 @@ package gokvstores
 
 import (
 	"sort"
+	"time"
 
 	conv "github.com/cstockton/go-conv"
 )
@@ -50,6 +51,12 @@ type KVStore interface {
 
 	// Close closes the connection to the store.
 	Close() error
+
+	// Expiration returns the global expiration.
+	Expiration() time.Duration
+
+	// SetExpiration sets the global expiration.
+	SetExpiration(exp time.Duration)
 }
 
 func stringSlice(values []interface{}) ([]string, error) {

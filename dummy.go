@@ -80,3 +80,11 @@ func (DummyStore) Flush() error {
 func (DummyStore) Close() error {
 	return nil
 }
+
+// Expiration implements KVStore interface.
+func (DummyStore) Expiration() time.Duration {
+	return 0
+}
+
+// SetExpiration implements KVStore interface.
+func (DummyStore) SetExpiration(exp time.Duration) {}

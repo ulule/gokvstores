@@ -9,32 +9,8 @@ import (
 )
 
 // ----------------------------------------------------------------------------
-// Client
+// Client options
 // ----------------------------------------------------------------------------
-
-// RedisClient is an interface thats allows to use Redis cluster or a redis single client seamlessly.
-type RedisClient interface {
-	Ping() *redis.StatusCmd
-	Exists(key string) *redis.BoolCmd
-	Del(keys ...string) *redis.IntCmd
-	FlushDb() *redis.StatusCmd
-	Close() error
-	Process(cmd redis.Cmder) error
-	Get(key string) *redis.StringCmd
-	Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd
-	MGet(keys ...string) *redis.SliceCmd
-	HGetAll(key string) *redis.StringStringMapCmd
-	HMSet(key string, fields map[string]string) *redis.StatusCmd
-	SMembers(key string) *redis.StringSliceCmd
-	SAdd(key string, members ...interface{}) *redis.IntCmd
-	Keys(pattern string) *redis.StringSliceCmd
-	Pipeline() *redis.Pipeline
-}
-
-// RedisPipeline is a struct which contains an opend redis pipeline transaction
-type RedisPipeline struct {
-	pipeline *redis.Pipeline
-}
 
 // RedisClientOptions are Redis client options.
 type RedisClientOptions struct {
@@ -71,6 +47,113 @@ type RedisClusterOptions struct {
 }
 
 // ----------------------------------------------------------------------------
+// Client
+// ----------------------------------------------------------------------------
+
+// RedisClient is an interface thats allows to use Redis cluster or a redis single client seamlessly.
+type RedisClient interface {
+	Ping() *redis.StatusCmd
+	Exists(key string) *redis.BoolCmd
+	Del(keys ...string) *redis.IntCmd
+	FlushDb() *redis.StatusCmd
+	Close() error
+	Process(cmd redis.Cmder) error
+	Get(key string) *redis.StringCmd
+	Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd
+	MGet(keys ...string) *redis.SliceCmd
+	HGetAll(key string) *redis.StringStringMapCmd
+	HMSet(key string, fields map[string]string) *redis.StatusCmd
+	SMembers(key string) *redis.StringSliceCmd
+	SAdd(key string, members ...interface{}) *redis.IntCmd
+	Keys(pattern string) *redis.StringSliceCmd
+	Pipeline() *redis.Pipeline
+}
+
+// ----------------------------------------------------------------------------
+// Pipeline
+// ----------------------------------------------------------------------------
+
+// RedisPipeline is a struct which contains an opend redis pipeline transaction
+type RedisPipeline struct {
+	pipeline *redis.Pipeline
+}
+
+// Pipeline returns Redis pipeline
+func (r RedisPipeline) Pipeline() *redis.Pipeline {
+	return r.pipeline
+}
+
+// Ping implements RedisClient Ping for pipeline
+func (r RedisPipeline) Ping() *redis.StatusCmd {
+	return r.pipeline.Ping()
+}
+
+// Exists implements RedisClient Exists for pipeline
+func (r RedisPipeline) Exists(key string) *redis.BoolCmd {
+	return r.pipeline.Exists(key)
+}
+
+// Del implements RedisClient Del for pipeline
+func (r RedisPipeline) Del(keys ...string) *redis.IntCmd {
+	return r.pipeline.Del(keys...)
+}
+
+// FlushDb implements RedisClient FlushDb for pipeline
+func (r RedisPipeline) FlushDb() *redis.StatusCmd {
+	return r.pipeline.FlushDb()
+}
+
+// Close implements RedisClient Close for pipeline
+func (r RedisPipeline) Close() error {
+	return r.pipeline.Close()
+}
+
+// Process implements RedisClient Process for pipeline
+func (r RedisPipeline) Process(cmd redis.Cmder) error {
+	return r.pipeline.Process(cmd)
+}
+
+// Get implements RedisClient Get for pipeline
+func (r RedisPipeline) Get(key string) *redis.StringCmd {
+	return r.pipeline.Get(key)
+}
+
+// MGet implements RedisClient MGet for pipeline
+func (r RedisPipeline) MGet(keys ...string) *redis.SliceCmd {
+	return r.pipeline.MGet(keys...)
+}
+
+// Set implements RedisClient Set for pipeline
+func (r RedisPipeline) Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
+	return r.pipeline.Set(key, value, expiration)
+}
+
+// HGetAll implements RedisClient HGetAll for pipeline
+func (r RedisPipeline) HGetAll(key string) *redis.StringStringMapCmd {
+	return r.pipeline.HGetAll(key)
+}
+
+// HMSet implements RedisClient HMSet for pipeline
+func (r RedisPipeline) HMSet(key string, fields map[string]string) *redis.StatusCmd {
+	return r.pipeline.HMSet(key, fields)
+}
+
+// SMembers implements RedisClient SMembers for pipeline
+func (r RedisPipeline) SMembers(key string) *redis.StringSliceCmd {
+	return r.pipeline.SMembers(key)
+}
+
+// SAdd implements RedisClient SAdd for pipeline
+func (r RedisPipeline) SAdd(key string, members ...interface{}) *redis.IntCmd {
+	return r.pipeline.SAdd(key, members...)
+}
+
+// Keys implements RedisClient Keys for pipeline
+func (r RedisPipeline) Keys(pattern string) *redis.StringSliceCmd {
+	return r.pipeline.Keys(pattern)
+}
+
+// ----------------------------------------------------------------------------
 // Store
 // ----------------------------------------------------------------------------
 
@@ -78,6 +161,66 @@ type RedisClusterOptions struct {
 type RedisStore struct {
 	client     RedisClient
 	expiration time.Duration
+}
+
+// NewRedisClientStore returns Redis client instance of KVStore.
+func NewRedisClientStore(options *RedisClientOptions, expiration time.Duration) (KVStore, error) {
+	opts := &redis.Options{
+		Network:            options.Network,
+		Addr:               options.Addr,
+		Dialer:             options.Dialer,
+		Password:           options.Password,
+		DB:                 options.DB,
+		MaxRetries:         options.MaxRetries,
+		DialTimeout:        options.DialTimeout,
+		ReadTimeout:        options.ReadTimeout,
+		WriteTimeout:       options.WriteTimeout,
+		PoolSize:           options.PoolSize,
+		PoolTimeout:        options.PoolTimeout,
+		IdleTimeout:        options.IdleTimeout,
+		IdleCheckFrequency: options.IdleCheckFrequency,
+		ReadOnly:           options.ReadOnly,
+	}
+
+	client := redis.NewClient(opts)
+
+	if err := client.Ping().Err(); err != nil {
+		return nil, err
+	}
+
+	return &RedisStore{
+		client:     client,
+		expiration: expiration,
+	}, nil
+}
+
+// NewRedisClusterStore returns Redis cluster client instance of KVStore.
+func NewRedisClusterStore(options *RedisClusterOptions, expiration time.Duration) (KVStore, error) {
+	opts := &redis.ClusterOptions{
+		Addrs:              options.Addrs,
+		MaxRedirects:       options.MaxRedirects,
+		ReadOnly:           options.ReadOnly,
+		RouteByLatency:     options.RouteByLatency,
+		Password:           options.Password,
+		DialTimeout:        options.DialTimeout,
+		ReadTimeout:        options.ReadTimeout,
+		WriteTimeout:       options.WriteTimeout,
+		PoolSize:           options.PoolSize,
+		PoolTimeout:        options.PoolTimeout,
+		IdleTimeout:        options.IdleTimeout,
+		IdleCheckFrequency: options.IdleCheckFrequency,
+	}
+
+	client := redis.NewClusterClient(opts)
+
+	if err := client.Ping().Err(); err != nil {
+		return nil, err
+	}
+
+	return &RedisStore{
+		client:     client,
+		expiration: expiration,
+	}, nil
 }
 
 // Get returns value for the given key.
@@ -110,14 +253,7 @@ func (r *RedisStore) MGet(keys []string) (map[string]interface{}, error) {
 
 // Set sets the value for the given key.
 func (r *RedisStore) Set(key string, value interface{}, opts ...Option) error {
-	expiration := r.expiration
-
-	opt := newOptions(opts...)
-	if opt.Expiration != 0 {
-		expiration = opt.Expiration
-	}
-
-	return r.client.Set(key, value, expiration).Err()
+	return r.client.Set(key, value, newOptions(r, opts...).Expiration).Err()
 }
 
 // GetMap returns map for the given key.
@@ -230,66 +366,6 @@ func (r *RedisStore) Close() error {
 	return r.client.Close()
 }
 
-// NewRedisClientStore returns Redis client instance of KVStore.
-func NewRedisClientStore(options *RedisClientOptions, expiration time.Duration) (KVStore, error) {
-	opts := &redis.Options{
-		Network:            options.Network,
-		Addr:               options.Addr,
-		Dialer:             options.Dialer,
-		Password:           options.Password,
-		DB:                 options.DB,
-		MaxRetries:         options.MaxRetries,
-		DialTimeout:        options.DialTimeout,
-		ReadTimeout:        options.ReadTimeout,
-		WriteTimeout:       options.WriteTimeout,
-		PoolSize:           options.PoolSize,
-		PoolTimeout:        options.PoolTimeout,
-		IdleTimeout:        options.IdleTimeout,
-		IdleCheckFrequency: options.IdleCheckFrequency,
-		ReadOnly:           options.ReadOnly,
-	}
-
-	client := redis.NewClient(opts)
-
-	if err := client.Ping().Err(); err != nil {
-		return nil, err
-	}
-
-	return &RedisStore{
-		client:     client,
-		expiration: expiration,
-	}, nil
-}
-
-// NewRedisClusterStore returns Redis cluster client instance of KVStore.
-func NewRedisClusterStore(options *RedisClusterOptions, expiration time.Duration) (KVStore, error) {
-	opts := &redis.ClusterOptions{
-		Addrs:              options.Addrs,
-		MaxRedirects:       options.MaxRedirects,
-		ReadOnly:           options.ReadOnly,
-		RouteByLatency:     options.RouteByLatency,
-		Password:           options.Password,
-		DialTimeout:        options.DialTimeout,
-		ReadTimeout:        options.ReadTimeout,
-		WriteTimeout:       options.WriteTimeout,
-		PoolSize:           options.PoolSize,
-		PoolTimeout:        options.PoolTimeout,
-		IdleTimeout:        options.IdleTimeout,
-		IdleCheckFrequency: options.IdleCheckFrequency,
-	}
-
-	client := redis.NewClusterClient(opts)
-
-	if err := client.Ping().Err(); err != nil {
-		return nil, err
-	}
-
-	return &RedisStore{
-		client:     client,
-		expiration: expiration,
-	}, nil
-}
-
 // Pipeline uses pipeline as a Redis client to execute multiple calls at once
 func (r *RedisStore) Pipeline(f func(r *RedisStore) error) ([]redis.Cmder, error) {
 	pipe := r.client.Pipeline()
@@ -345,77 +421,12 @@ func (r *RedisStore) GetMaps(keys []string) (map[string]map[string]interface{}, 
 	return newValues, nil
 }
 
-// Pipeline returns Redis pipeline
-func (r RedisPipeline) Pipeline() *redis.Pipeline {
-	return r.pipeline
+// Expiration implements KVStore interface.
+func (r RedisStore) Expiration() time.Duration {
+	return r.expiration
 }
 
-// Ping implements RedisClient Ping for pipeline
-func (r RedisPipeline) Ping() *redis.StatusCmd {
-	return r.pipeline.Ping()
-}
-
-// Exists implements RedisClient Exists for pipeline
-func (r RedisPipeline) Exists(key string) *redis.BoolCmd {
-	return r.pipeline.Exists(key)
-}
-
-// Del implements RedisClient Del for pipeline
-func (r RedisPipeline) Del(keys ...string) *redis.IntCmd {
-	return r.pipeline.Del(keys...)
-}
-
-// FlushDb implements RedisClient FlushDb for pipeline
-func (r RedisPipeline) FlushDb() *redis.StatusCmd {
-	return r.pipeline.FlushDb()
-}
-
-// Close implements RedisClient Close for pipeline
-func (r RedisPipeline) Close() error {
-	return r.pipeline.Close()
-}
-
-// Process implements RedisClient Process for pipeline
-func (r RedisPipeline) Process(cmd redis.Cmder) error {
-	return r.pipeline.Process(cmd)
-}
-
-// Get implements RedisClient Get for pipeline
-func (r RedisPipeline) Get(key string) *redis.StringCmd {
-	return r.pipeline.Get(key)
-}
-
-// MGet implements RedisClient MGet for pipeline
-func (r RedisPipeline) MGet(keys ...string) *redis.SliceCmd {
-	return r.pipeline.MGet(keys...)
-}
-
-// Set implements RedisClient Set for pipeline
-func (r RedisPipeline) Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
-	return r.pipeline.Set(key, value, expiration)
-}
-
-// HGetAll implements RedisClient HGetAll for pipeline
-func (r RedisPipeline) HGetAll(key string) *redis.StringStringMapCmd {
-	return r.pipeline.HGetAll(key)
-}
-
-// HMSet implements RedisClient HMSet for pipeline
-func (r RedisPipeline) HMSet(key string, fields map[string]string) *redis.StatusCmd {
-	return r.pipeline.HMSet(key, fields)
-}
-
-// SMembers implements RedisClient SMembers for pipeline
-func (r RedisPipeline) SMembers(key string) *redis.StringSliceCmd {
-	return r.pipeline.SMembers(key)
-}
-
-// SAdd implements RedisClient SAdd for pipeline
-func (r RedisPipeline) SAdd(key string, members ...interface{}) *redis.IntCmd {
-	return r.pipeline.SAdd(key, members...)
-}
-
-// Keys implements RedisClient Keys for pipeline
-func (r RedisPipeline) Keys(pattern string) *redis.StringSliceCmd {
-	return r.pipeline.Keys(pattern)
+// SetExpiration implements KVStore interface.
+func (r *RedisStore) SetExpiration(exp time.Duration) {
+	r.expiration = exp
 }

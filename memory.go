@@ -13,6 +13,15 @@ type MemoryStore struct {
 	cleanupInterval time.Duration
 }
 
+// NewMemoryStore returns in-memory KVStore.
+func NewMemoryStore(expiration time.Duration, cleanupInterval time.Duration) (KVStore, error) {
+	return &MemoryStore{
+		cache:           cache.New(expiration, cleanupInterval),
+		expiration:      time.Duration(expiration) * time.Second,
+		cleanupInterval: cleanupInterval,
+	}, nil
+}
+
 // Get returns item from the cache.
 func (c *MemoryStore) Get(key string) (interface{}, error) {
 	item, _ := c.cache.Get(key)
@@ -31,15 +40,7 @@ func (c *MemoryStore) MGet(keys []string) (map[string]interface{}, error) {
 
 // Set sets value in the cache.
 func (c *MemoryStore) Set(key string, value interface{}, opts ...Option) error {
-	expiration := c.expiration
-
-	opt := newOptions(opts...)
-	if opt.Expiration != 0 {
-		expiration = opt.Expiration
-	}
-
-	c.cache.Set(key, value, expiration)
-
+	c.cache.Set(key, value, newOptions(c, opts...).Expiration)
 	return nil
 }
 
@@ -128,11 +129,12 @@ func (c *MemoryStore) Exists(key string) (bool, error) {
 	return false, nil
 }
 
-// NewMemoryStore returns in-memory KVStore.
-func NewMemoryStore(expiration time.Duration, cleanupInterval time.Duration) (KVStore, error) {
-	return &MemoryStore{
-		cache:           cache.New(expiration, cleanupInterval),
-		expiration:      time.Duration(expiration) * time.Second,
-		cleanupInterval: cleanupInterval,
-	}, nil
+// Expiration implements KVStore interface.
+func (c MemoryStore) Expiration() time.Duration {
+	return c.expiration
+}
+
+// SetExpiration implements KVStore interface.
+func (c *MemoryStore) SetExpiration(exp time.Duration) {
+	c.expiration = exp
 }

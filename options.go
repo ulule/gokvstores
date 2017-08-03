@@ -10,11 +10,18 @@ type Options struct {
 // Option is a functional option.
 type Option func(*Options)
 
-func newOptions(opts ...Option) Options {
+func newOptions(store KVStore, opts ...Option) Options {
 	opt := Options{}
 	for _, o := range opts {
 		o(&opt)
 	}
+
+	// Defaults
+
+	if opt.Expiration == 0 {
+		opt.Expiration = store.Expiration()
+	}
+
 	return opt
 }
 

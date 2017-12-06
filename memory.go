@@ -68,6 +68,20 @@ func (c *MemoryStore) SetMap(key string, value map[string]interface{}) error {
 	return nil
 }
 
+// DeleteMap removes the specified fields from the map stored at key.
+func (c *MemoryStore) DeleteMap(key string, fields ...string) error {
+	m, err := c.GetMap(key)
+	if err != nil {
+		return err
+	}
+
+	for _, field := range fields {
+		delete(m, field)
+	}
+
+	return c.SetMap(key, m)
+}
+
 // GetSlice returns slice for the given key.
 func (c *MemoryStore) GetSlice(key string) ([]interface{}, error) {
 	if v, found := c.cache.Get(key); found {

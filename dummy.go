@@ -40,6 +40,9 @@ func (DummyStore) SetMap(key string, value map[string]interface{}) error {
 	return nil
 }
 
+// DeleteMap removes the specified fields from the map stored at key.
+func (DummyStore) DeleteMap(key string, fields ...string) error { return nil }
+
 // GetSlice returns slice for the given key.
 func (DummyStore) GetSlice(key string) ([]interface{}, error) {
 	return nil, nil

@@ -23,6 +23,7 @@ type RedisClient interface {
 	Get(key string) *redis.StringCmd
 	Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd
 	MGet(keys ...string) *redis.SliceCmd
+	HDel(key string, fields ...string) *redis.IntCmd
 	HGetAll(key string) *redis.StringStringMapCmd
 	HMSet(key string, fields map[string]string) *redis.StatusCmd
 	SMembers(key string) *redis.StringSliceCmd
@@ -151,6 +152,11 @@ func (r *RedisStore) SetMap(key string, values map[string]interface{}) error {
 	}
 
 	return r.client.HMSet(key, newValues).Err()
+}
+
+// DeleteMap removes the specified fields from the map stored at key.
+func (r *RedisStore) DeleteMap(key string, fields ...string) error {
+	return r.client.HDel(key, fields...).Err()
 }
 
 // GetSlice returns slice for the given key.
@@ -391,6 +397,11 @@ func (r RedisPipeline) MGet(keys ...string) *redis.SliceCmd {
 // Set implements RedisClient Set for pipeline
 func (r RedisPipeline) Set(key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
 	return r.pipeline.Set(key, value, expiration)
+}
+
+// HDel implements RedisClient HDel for pipeline
+func (r RedisPipeline) HDel(key string, fields ...string) *redis.IntCmd {
+	return r.pipeline.HDel(key, fields...)
 }
 
 // HGetAll implements RedisClient HGetAll for pipeline

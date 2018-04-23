@@ -353,6 +353,18 @@ func (r *RedisStore) GetMaps(keys []string) (map[string]map[string]interface{}, 
 	return newValues, nil
 }
 
+// SetMaps sets the given maps.
+func (r *RedisStore) SetMaps(maps map[string]map[string]interface{}) error {
+	_, err := r.Pipeline(func(r *RedisStore) error {
+		for k, v := range maps {
+			r.SetMap(k, v)
+		}
+		return nil
+
+	})
+	return err
+}
+
 // Pipeline returns Redis pipeline
 func (r RedisPipeline) Pipeline() *redis.Pipeline {
 	return r.pipeline

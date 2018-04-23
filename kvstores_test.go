@@ -103,6 +103,14 @@ func testStore(t *testing.T, store KVStore) {
 		is.False(exists)
 	}
 
+	is.NoError(store.SetMaps(mapResults))
+	results, err = store.GetMaps(keys)
+	is.NoError(err)
+	for key, result := range results {
+		is.Equal(result, mapResults[key])
+		is.NoError(store.Delete(key))
+	}
+
 	// Slices
 
 	sliceResults := map[string][]interface{}{

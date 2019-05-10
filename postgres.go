@@ -1,6 +1,7 @@
 package gokvstores
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,24 +11,35 @@ import (
 	conv "github.com/cstockton/go-conv"
 )
 
+var (
+	errorExpired = errors.New("Key is expired")
+)
+
 type PostgresStore struct {
 	dbRead  *pg.DB
 	dbWrite *pg.DB
 }
 
 type KV struct {
-	Key   string `sql:",pk"`
-	Value string
-	Map   map[string]interface{}
-	Slice []interface{}
+	Key       string `sql:",pk"`
+	Value     string
+	Map       map[string]interface{}
+	Slice     []interface{}
+	CreatedAt time.Time `sql:"default:now()"`
+	ExpiresAt time.Time
 }
 
 // Exists checks if the given key exists.
 func (p *PostgresStore) Exists(key string) (bool, error) {
-	kv := &KV{Key: key}
+	kv := &KV{
+		Key: key,
+	}
 	err := p.dbRead.Select(kv)
 	fmt.Printf("Exists %s => %#v (%v)\n", key, kv, err)
 	if err != nil {
+		return false, nil
+	}
+	if (kv.ExpiresAt != time.Time{}) && kv.ExpiresAt.Before(time.Now()) {
 		return false, nil
 	}
 	return true, nil
@@ -55,9 +67,12 @@ func (p *PostgresStore) MGet(keys []string) (map[string]interface{}, error) {
 func (p *PostgresStore) Get(key string) (interface{}, error) {
 	kv := &KV{Key: key}
 	err := p.dbRead.Select(kv)
-	fmt.Printf("Get %s => %#v (%v)\n", key, kv, err)
+	fmt.Printf("Get %s => b %#v (%v)\n", key, kv, err)
 	if err != nil {
 		return nil, err
+	}
+	if (kv.ExpiresAt != time.Time{}) && kv.ExpiresAt.Before(time.Now()) {
+		return nil, errorExpired
 	}
 	return kv.Value, nil
 }
@@ -69,12 +84,13 @@ func (p *PostgresStore) Set(key string, value interface{}) error {
 		return err
 	}
 	kv := &KV{
-		Key:   key,
-		Value: val,
+		Key:       key,
+		Value:     val,
+		ExpiresAt: time.Time{},
 	}
 	_, err = p.dbWrite.Model(kv).
 		OnConflict("(key) DO UPDATE").
-		Set("value = EXCLUDED.value").
+		Set("value = EXCLUDED.value, expires_at = EXCLUDED.expires_at").
 		Insert()
 	fmt.Printf("Set %s => %#v (%v)\n", key, kv, err)
 	return err
@@ -94,12 +110,13 @@ func (p *PostgresStore) GetMap(key string) (map[string]interface{}, error) {
 // SetMap sets map for the given key.
 func (p *PostgresStore) SetMap(key string, value map[string]interface{}) error {
 	kv := &KV{
-		Key: key,
-		Map: value,
+		Key:       key,
+		Map:       value,
+		ExpiresAt: time.Time{},
 	}
 	_, err := p.dbWrite.Model(kv).
 		OnConflict("(key) DO UPDATE").
-		Set("map = EXCLUDED.map").
+		Set("map = EXCLUDED.map, expires_at = EXCLUDED.expires_at").
 		Insert()
 	fmt.Printf("SetMap %s => %#v (%v)\n", key, kv, err)
 	return err
@@ -129,12 +146,13 @@ func (p *PostgresStore) GetSlice(key string) ([]interface{}, error) {
 // SetSlice sets slice for the given key.
 func (p *PostgresStore) SetSlice(key string, value []interface{}) error {
 	kv := &KV{
-		Key:   key,
-		Slice: value,
+		Key:       key,
+		Slice:     value,
+		ExpiresAt: time.Time{},
 	}
 	_, err := p.dbWrite.Model(kv).
 		OnConflict("(key) DO UPDATE").
-		Set("slice = EXCLUDED.slice").
+		Set("slice = EXCLUDED.slice, expires_at = EXCLUDED.expires_at").
 		Insert()
 	fmt.Printf("SetSlice %s => %#v (%v)\n", key, kv, err)
 	return err
@@ -152,6 +170,7 @@ func (p *PostgresStore) AppendSlice(key string, values ...interface{}) error {
 		return err
 	}
 
+	//TODO: find the way to do it as SQL wrapper array functions
 	for _, item := range values {
 		items = append(items, item)
 	}
@@ -184,7 +203,23 @@ func (p *PostgresStore) Keys(pattern string) ([]interface{}, error) {
 
 // SetWithExpiration sets the value for the given key for a specified duration.
 func (p *PostgresStore) SetWithExpiration(key string, value interface{}, expiration time.Duration) error {
-	return nil
+	val, err := conv.String(value)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("TIME: %v %v\n", expiration*time.Second, time.Now().Add(expiration))
+	kv := &KV{
+		Key:   key,
+		Value: val,
+		//TODO: find the way to do it as SQL wrapper `UPDATE ... now() + interfal '12 seconds'`
+		ExpiresAt: time.Now().Add(expiration),
+	}
+	_, err = p.dbWrite.Model(kv).
+		OnConflict("(key) DO UPDATE").
+		Set("value = EXCLUDED.value, expires_at = EXCLUDED.expires_at").
+		Insert()
+	fmt.Printf("SetWithExpiration %s => %#v (%v)\n", key, kv, err)
+	return err
 }
 
 // NewPostgresStore returns two db connections KVStore.

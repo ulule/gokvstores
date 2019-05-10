@@ -36,6 +36,7 @@ func (p *PostgresStore) Exists(key string) (bool, error) {
 	}
 	err := p.dbRead.Select(kv)
 	fmt.Printf("Exists %s => %#v (%v)\n", key, kv, err)
+	//TODO: change to count and return false not only on error
 	if err != nil {
 		return false, nil
 	}

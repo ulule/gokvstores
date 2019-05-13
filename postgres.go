@@ -2,7 +2,6 @@ package gokvstores
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/go-pg/pg"
@@ -36,7 +35,6 @@ func (p *PostgresStore) Exists(key string) (bool, error) {
 		Key: key,
 	}
 	err := p.dbRead.Select(kv)
-	fmt.Printf("Exists %s => %#v (%v)\n", key, kv, err)
 	//TODO: change to count and return false not only on error
 	if err != nil {
 		return false, nil
@@ -54,7 +52,6 @@ func (p *PostgresStore) MGet(keys []string) (map[string]interface{}, error) {
 		Model(&kvs).
 		Where("key in (?)", pg.In(keys)).
 		Select()
-	fmt.Printf("MGet %v => %#v (%v)\n", keys, kvs, err)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +66,6 @@ func (p *PostgresStore) MGet(keys []string) (map[string]interface{}, error) {
 func (p *PostgresStore) Get(key string) (interface{}, error) {
 	kv := &KV{Key: key}
 	err := p.dbRead.Select(kv)
-	fmt.Printf("Get %s => b %#v (%v)\n", key, kv, err)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +90,6 @@ func (p *PostgresStore) Set(key string, value interface{}) error {
 		OnConflict("(key) DO UPDATE").
 		Set("value = EXCLUDED.value, expires_at = EXCLUDED.expires_at").
 		Insert()
-	fmt.Printf("Set %s => %#v (%v)\n", key, kv, err)
 	return err
 }
 
@@ -102,7 +97,6 @@ func (p *PostgresStore) Set(key string, value interface{}) error {
 func (p *PostgresStore) GetMap(key string) (map[string]interface{}, error) {
 	kv := &KV{Key: key}
 	err := p.dbRead.Select(kv)
-	fmt.Printf("GetMap %s => %#v (%v)\n", key, kv, err)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +114,6 @@ func (p *PostgresStore) SetMap(key string, value map[string]interface{}) error {
 		OnConflict("(key) DO UPDATE").
 		Set("map = EXCLUDED.map, expires_at = EXCLUDED.expires_at").
 		Insert()
-	fmt.Printf("SetMap %s => %#v (%v)\n", key, kv, err)
 	return err
 }
 
@@ -138,7 +131,6 @@ func (p *PostgresStore) SetMaps(maps map[string]map[string]interface{}) error {
 func (p *PostgresStore) GetSlice(key string) ([]interface{}, error) {
 	kv := &KV{Key: key}
 	err := p.dbRead.Select(kv)
-	fmt.Printf("GetSlice %s => %#v (%v)\n", key, kv, err)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +148,6 @@ func (p *PostgresStore) SetSlice(key string, value []interface{}) error {
 		OnConflict("(key) DO UPDATE").
 		Set("slice = EXCLUDED.slice, expires_at = EXCLUDED.expires_at").
 		Insert()
-	fmt.Printf("SetSlice %s => %#v (%v)\n", key, kv, err)
 	return err
 }
 
@@ -176,7 +167,6 @@ func (p *PostgresStore) AppendSlice(key string, values ...interface{}) error {
 	for _, item := range values {
 		items = append(items, item)
 	}
-	fmt.Printf("AppendSlice %s => %#v (%v)\n", key, items, err)
 	return p.SetSlice(key, items)
 }
 
@@ -189,7 +179,6 @@ func (p *PostgresStore) Close() error {
 func (p *PostgresStore) Delete(key string) error {
 	kv := &KV{Key: key}
 	err := p.dbWrite.Delete(kv)
-	fmt.Printf("Delete %s => %#v (%v)\n", key, kv, err)
 	return err
 }
 
@@ -209,7 +198,6 @@ func (p *PostgresStore) SetWithExpiration(key string, value interface{}, expirat
 	if err != nil {
 		return err
 	}
-	fmt.Printf("TIME: %v %v\n", expiration*time.Second, time.Now().Add(expiration))
 	kv := &KV{
 		Key:   key,
 		Value: val,
@@ -220,7 +208,6 @@ func (p *PostgresStore) SetWithExpiration(key string, value interface{}, expirat
 		OnConflict("(key) DO UPDATE").
 		Set("value = EXCLUDED.value, expires_at = EXCLUDED.expires_at").
 		Insert()
-	fmt.Printf("SetWithExpiration %s => %#v (%v)\n", key, kv, err)
 	return err
 }
 
@@ -275,7 +262,6 @@ func NewPostgresStoreConn(writeConn, readConn *pg.DB) (KVStore, error) {
 	}
 	err := createSchema(ret.dbWrite)
 	if err != nil {
-		fmt.Printf("createSchema: %v\n", err)
 	}
 	return ret, nil
 }

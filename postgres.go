@@ -245,5 +245,24 @@ func createSchema(db *pg.DB) error {
 			return err
 		}
 	}
+
+	_, err := db.Exec(`CREATE FUNCTION kvs_delete_old_rows() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+	BEGIN
+		DELETE FROM kvs WHERE expires_at < NOW();
+		RETURN NEW;
+	END;
+	$$;`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`CREATE TRIGGER kvs_delete_old_rows_trigger
+    AFTER INSERT ON kvs
+    EXECUTE PROCEDURE kvs_delete_old_rows();`)
+	if err != nil {
+		return err
+	}
 	return nil
 }

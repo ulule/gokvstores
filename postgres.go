@@ -16,8 +16,8 @@ var (
 )
 
 type PostgresStore struct {
-	dbRead  *pg.DB
 	dbWrite *pg.DB
+	dbRead  *pg.DB
 }
 
 type KV struct {
@@ -224,27 +224,6 @@ func (p *PostgresStore) SetWithExpiration(key string, value interface{}, expirat
 	return err
 }
 
-// NewPostgresStore returns two db connections KVStore.
-func NewPostgresStore(readUrl, writeUrl string) (KVStore, error) {
-	readOptions, err := pg.ParseURL(readUrl)
-	if err != nil {
-		return nil, err
-	}
-	writeOptions, err := pg.ParseURL(writeUrl)
-	if err != nil {
-		return nil, err
-	}
-	ret := &PostgresStore{
-		dbRead:  pg.Connect(readOptions),
-		dbWrite: pg.Connect(writeOptions),
-	}
-	err = createSchema(ret.dbWrite)
-	if err != nil {
-		fmt.Printf("createSchema: %v\n", err)
-	}
-	return ret, nil
-}
-
 func createSchema(db *pg.DB) error {
 	for _, model := range []interface{}{(*KV)(nil)} {
 		err := db.CreateTable(model, &orm.CreateTableOptions{
@@ -274,4 +253,29 @@ func createSchema(db *pg.DB) error {
 		return err
 	}
 	return nil
+}
+
+// NewPostgresStore returns two db connections KVStore.
+func NewPostgresStore(writeUrl, readUrl string) (KVStore, error) {
+	readOptions, err := pg.ParseURL(readUrl)
+	if err != nil {
+		return nil, err
+	}
+	writeOptions, err := pg.ParseURL(writeUrl)
+	if err != nil {
+		return nil, err
+	}
+	return NewPostgresStoreConn(pg.Connect(writeOptions), pg.Connect(readOptions))
+}
+
+func NewPostgresStoreConn(writeConn, readConn *pg.DB) (KVStore, error) {
+	ret := &PostgresStore{
+		dbWrite: writeConn,
+		dbRead:  readConn,
+	}
+	err := createSchema(ret.dbWrite)
+	if err != nil {
+		fmt.Printf("createSchema: %v\n", err)
+	}
+	return ret, nil
 }

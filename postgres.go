@@ -21,7 +21,8 @@ type PostgresStore struct {
 }
 
 type KV struct {
-	Key       string `sql:",pk"`
+	tableName struct{} `sql:"gokvstores_data"`
+	Key       string   `sql:",pk"`
 	Value     string
 	Map       map[string]interface{}
 	Slice     []interface{}
@@ -224,12 +225,20 @@ func (p *PostgresStore) SetWithExpiration(key string, value interface{}, expirat
 }
 
 // NewPostgresStore returns two db connections KVStore.
-func NewPostgresStore(readOptions, writeOptions *pg.Options) (KVStore, error) {
+func NewPostgresStore(readUrl, writeUrl string) (KVStore, error) {
+	readOptions, err := pg.ParseURL(readUrl)
+	if err != nil {
+		return nil, err
+	}
+	writeOptions, err := pg.ParseURL(writeUrl)
+	if err != nil {
+		return nil, err
+	}
 	ret := &PostgresStore{
 		dbRead:  pg.Connect(readOptions),
 		dbWrite: pg.Connect(writeOptions),
 	}
-	err := createSchema(ret.dbWrite)
+	err = createSchema(ret.dbWrite)
 	if err != nil {
 		fmt.Printf("createSchema: %v\n", err)
 	}
@@ -246,11 +255,11 @@ func createSchema(db *pg.DB) error {
 		}
 	}
 
-	_, err := db.Exec(`CREATE FUNCTION kvs_delete_old_rows() RETURNS trigger
+	_, err := db.Exec(`CREATE FUNCTION gokvstores_data_delete_old_rows() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 	BEGIN
-		DELETE FROM kvs WHERE expires_at < NOW();
+		DELETE FROM gokvstores_data WHERE expires_at < NOW();
 		RETURN NEW;
 	END;
 	$$;`)
@@ -258,9 +267,9 @@ func createSchema(db *pg.DB) error {
 		return err
 	}
 
-	_, err = db.Exec(`CREATE TRIGGER kvs_delete_old_rows_trigger
-    AFTER INSERT ON kvs
-    EXECUTE PROCEDURE kvs_delete_old_rows();`)
+	_, err = db.Exec(`CREATE TRIGGER gokvstores_data_delete_old_rows_trigger
+    AFTER INSERT ON gokvstores_data
+    EXECUTE PROCEDURE gokvstores_data_delete_old_rows();`)
 	if err != nil {
 		return err
 	}

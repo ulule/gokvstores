@@ -211,9 +211,9 @@ func (p *PostgresStore) SetWithExpiration(key string, value interface{}, expirat
 	return err
 }
 
-func createSchema(db *pg.DB) error {
+func (p *PostgresStore) createSchema() error {
 	for _, model := range []interface{}{(*KV)(nil)} {
-		err := db.CreateTable(model, &orm.CreateTableOptions{
+		err := p.dbWrite.CreateTable(model, &orm.CreateTableOptions{
 			//Temp: true,
 		})
 		if err != nil {
@@ -221,7 +221,7 @@ func createSchema(db *pg.DB) error {
 		}
 	}
 
-	_, err := db.Exec(`CREATE FUNCTION gokvstores_data_delete_old_rows() RETURNS trigger
+	_, err := p.dbWrite.Exec(`CREATE FUNCTION gokvstores_data_delete_old_rows() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 	BEGIN
@@ -233,7 +233,7 @@ func createSchema(db *pg.DB) error {
 		return err
 	}
 
-	_, err = db.Exec(`CREATE TRIGGER gokvstores_data_delete_old_rows_trigger
+	_, err = p.dbWrite.Exec(`CREATE TRIGGER gokvstores_data_delete_old_rows_trigger
     AFTER INSERT ON gokvstores_data
     EXECUTE PROCEDURE gokvstores_data_delete_old_rows();`)
 	if err != nil {
@@ -243,7 +243,7 @@ func createSchema(db *pg.DB) error {
 }
 
 // NewPostgresStore returns two db connections KVStore.
-func NewPostgresStore(writeUrl, readUrl string) (KVStore, error) {
+func NewPostgresStore(writeUrl, readUrl string, initSchema bool) (KVStore, error) {
 	readOptions, err := pg.ParseURL(readUrl)
 	if err != nil {
 		return nil, err
@@ -252,16 +252,16 @@ func NewPostgresStore(writeUrl, readUrl string) (KVStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewPostgresStoreConn(pg.Connect(writeOptions), pg.Connect(readOptions))
+	return NewPostgresStoreConn(pg.Connect(writeOptions), pg.Connect(readOptions), initSchema)
 }
 
-func NewPostgresStoreConn(writeConn, readConn *pg.DB) (KVStore, error) {
+func NewPostgresStoreConn(writeConn, readConn *pg.DB, initSchema bool) (KVStore, error) {
 	ret := &PostgresStore{
 		dbWrite: writeConn,
 		dbRead:  readConn,
 	}
-	err := createSchema(ret.dbWrite)
-	if err != nil {
+	if initSchema {
+		ret.createSchema()
 	}
 	return ret, nil
 }

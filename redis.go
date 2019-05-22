@@ -175,8 +175,8 @@ func (r *RedisStore) GetSlice(key string) ([]interface{}, error) {
 	}
 
 	newValues := make([]interface{}, len(values))
-	for _, v := range values {
-		newValues = append(newValues, v)
+	for i := range values {
+		newValues[i] = values[i]
 	}
 
 	return newValues, nil

@@ -35,9 +35,11 @@ func (p *PostgresStore) Exists(key string) (bool, error) {
 		Key: key,
 	}
 	err := p.dbRead.Select(kv)
-	//TODO: change to count and return false not only on error
-	if err != nil {
+	if err == pg.ErrNoRows {
 		return false, nil
+	}
+	if err != nil {
+		return false, err
 	}
 	if (kv.ExpiresAt != time.Time{}) && kv.ExpiresAt.Before(time.Now()) {
 		return false, nil
@@ -52,6 +54,9 @@ func (p *PostgresStore) MGet(keys []string) (map[string]interface{}, error) {
 		Model(&kvs).
 		Where("key in (?)", pg.In(keys)).
 		Select()
+	if err == pg.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +71,9 @@ func (p *PostgresStore) MGet(keys []string) (map[string]interface{}, error) {
 func (p *PostgresStore) Get(key string) (interface{}, error) {
 	kv := &KV{Key: key}
 	err := p.dbRead.Select(kv)
+	if err == pg.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +105,9 @@ func (p *PostgresStore) Set(key string, value interface{}) error {
 func (p *PostgresStore) GetMap(key string) (map[string]interface{}, error) {
 	kv := &KV{Key: key}
 	err := p.dbRead.Select(kv)
+	if err == pg.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +142,9 @@ func (p *PostgresStore) SetMaps(maps map[string]map[string]interface{}) error {
 func (p *PostgresStore) GetSlice(key string) ([]interface{}, error) {
 	kv := &KV{Key: key}
 	err := p.dbRead.Select(kv)
+	if err == pg.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

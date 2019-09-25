@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	conv "github.com/cstockton/go-conv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +39,7 @@ func TestRedisStore(t *testing.T) {
 	sort.Strings(expectedStrings)
 	result := make([]string, len(values))
 	for k, v := range values {
-		result[k], _ = conv.String(v)
+		result[k], _ = v.(string)
 	}
 	sort.Strings(result)
 

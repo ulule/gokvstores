@@ -3,8 +3,6 @@ package gokvstores
 import (
 	"sort"
 	"time"
-
-	conv "github.com/cstockton/go-conv"
 )
 
 // KVStore is the KV store interface.
@@ -67,12 +65,10 @@ func stringSlice(values []interface{}) ([]string, error) {
 
 	for _, v := range values {
 		if v != nil {
-			val, err := conv.String(v)
-			if err != nil {
-				return nil, err
+			val, ok := v.(string)
+			if ok {
+				converted = append(converted, val)
 			}
-
-			converted = append(converted, val)
 		}
 	}
 

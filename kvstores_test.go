@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	conv "github.com/cstockton/go-conv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,8 +29,9 @@ func testStore(t *testing.T, store KVStore) {
 		// Get
 
 		v, err := store.Get(key)
-		val, err := conv.String(v)
 		is.NoError(err)
+		val, ok := v.(string)
+		is.True(ok)
 		is.Equal(expected, val)
 
 		exists, err := store.Exists(key)
@@ -45,8 +45,8 @@ func testStore(t *testing.T, store KVStore) {
 	mResults, err := store.MGet(keys)
 
 	for key, result := range mResults {
-		val, err := conv.String(result)
-		is.NoError(err)
+		val, ok := result.(string)
+		is.True(ok)
 		is.Equal(val, itemResults[key])
 	}
 
@@ -166,8 +166,9 @@ func testStore(t *testing.T, store KVStore) {
 	is.NoError(err)
 
 	v, err := store.Get("foo")
-	val, err := conv.String(v)
 	is.NoError(err)
+	val, ok := v.(string)
+	is.True(ok)
 	is.Equal("bar", val)
 
 	time.Sleep(time.Duration(expiration) * time.Second)

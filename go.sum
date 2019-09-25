@@ -1,5 +1,3 @@
-github.com/cstockton/go-conv v0.0.0-20170524002450-66a2b2ba36e1 h1:h4OgDocdYHGiUh+zUEe4nFlb9ShoHUllqDefGaRoZFg=
-github.com/cstockton/go-conv v0.0.0-20170524002450-66a2b2ba36e1/go.mod h1:MBKpQ5HV5wcT/nQYoEqjSMiXwxPouaReOs2f4kj70SQ=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=

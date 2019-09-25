@@ -1,10 +1,10 @@
 package gokvstores
 
 import (
+	"fmt"
 	"net"
 	"time"
 
-	conv "github.com/cstockton/go-conv"
 	redis "gopkg.in/redis.v5"
 )
 
@@ -147,12 +147,12 @@ func (r *RedisStore) SetMap(key string, values map[string]interface{}) error {
 	newValues := make(map[string]string, len(values))
 
 	for k, v := range values {
-		val, err := conv.String(v)
-		if err != nil {
-			return err
+		switch vv := v.(type) {
+		case string:
+			newValues[k] = vv
+		default:
+			newValues[k] = fmt.Sprintf("%v", vv)
 		}
-
-		newValues[k] = val
 	}
 
 	return r.client.HMSet(key, newValues).Err()

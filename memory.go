@@ -163,3 +163,5 @@ func NewMemoryStore(expiration time.Duration, cleanupInterval time.Duration) (KV
 		cleanupInterval: cleanupInterval,
 	}, nil
 }
+
+var _ KVStore = &MemoryStore{}

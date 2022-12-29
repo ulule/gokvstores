@@ -444,3 +444,5 @@ func (r RedisPipeline) SAdd(ctx context.Context, key string, members ...interfac
 func (r RedisPipeline) Keys(ctx context.Context, pattern string) *redis.StringSliceCmd {
 	return r.pipeline.Keys(ctx, pattern)
 }
+
+var _ KVStore = &RedisStore{}

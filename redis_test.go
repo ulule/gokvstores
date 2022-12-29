@@ -1,6 +1,7 @@
 package gokvstores
 
 import (
+	"context"
 	"sort"
 	"testing"
 	"time"
@@ -9,7 +10,8 @@ import (
 )
 
 func TestRedisStore(t *testing.T) {
-	store, err := NewRedisClientStore(&RedisClientOptions{
+	ctx := context.Background()
+	store, err := NewRedisClientStore(ctx, &RedisClientOptions{
 		Addr:     "localhost:6379",
 		Password: "",
 		DB:       0,
@@ -29,11 +31,11 @@ func TestRedisStore(t *testing.T) {
 	expectedStrings := []string{"order1", "order2", "order3"}
 
 	for key, expected := range mapResults {
-		err = store.SetMap(key, expected)
+		err = store.SetMap(ctx, key, expected)
 		is.NoError(err)
 	}
 
-	values, err := store.Keys("order*")
+	values, err := store.Keys(ctx, "order*")
 	is.NoError(err)
 
 	sort.Strings(expectedStrings)
